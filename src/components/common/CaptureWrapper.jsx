@@ -40,13 +40,13 @@ const CaptureWrapper = ({
   // ตรวจสอบการโหลด Font
   // เพิ่มในส่วนต้นของ CaptureButtons.jsx หรือ CaptureWrapper.jsx
   useEffect(() => {
-    // เพิ่มการโหลดฟอนต์ Kanit โดยตรง
-    if (!document.getElementById("kanit-font")) {
+    // เพิ่มการโหลดฟอนต์ Prompt โดยตรง
+    if (!document.getElementById("Prompt-font")) {
       const link = document.createElement("link");
-      link.id = "kanit-font";
+      link.id = "Prompt-font";
       link.rel = "stylesheet";
       link.href =
-        "https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap";
+        "https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap";
       document.head.appendChild(link);
 
       // สร้าง preload hint เพื่อเร่งการโหลด
@@ -55,7 +55,7 @@ const CaptureWrapper = ({
       preload.as = "font";
       preload.type = "font/woff2";
       preload.href =
-        "https://fonts.gstatic.com/s/kanit/v12/nKKZ-Go6G5tXcraVGwCKd6xBDFs.woff2";
+        "https://fonts.gstatic.com/s/Prompt/v12/nKKZ-Go6G5tXcraVGwCKd6xBDFs.woff2";
       preload.crossOrigin = "anonymous";
       document.head.appendChild(preload);
     }
@@ -64,8 +64,8 @@ const CaptureWrapper = ({
     const waitForFonts = async () => {
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
-        const isFontLoaded = document.fonts.check("400 16px 'Kanit'");
-        console.log("Kanit font loaded:", isFontLoaded);
+        const isFontLoaded = document.fonts.check("400 16px 'Prompt'");
+        console.log("Prompt font loaded:", isFontLoaded);
       } else {
         // รอสักครู่
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -285,7 +285,7 @@ const CaptureWrapper = ({
         ref={captureRef}
         className="capture-content"
         style={{
-          fontFamily: "Kanit, sans-serif",
+          fontFamily: "Prompt, sans-serif",
           ...options.contentStyle,
         }}
       >

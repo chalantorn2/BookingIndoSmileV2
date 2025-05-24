@@ -36,7 +36,9 @@ const NotFound = () => {
         </div>
 
         <div className="mt-12 text-center">
-          <p className="text-sm text-gray-500">Seven Smile Tour And Ticket</p>
+          <p className="text-sm text-gray-500">
+            INDO SMILE SOUTH SERVICES CO.,LTD.
+          </p>
         </div>
       </div>
     </div>

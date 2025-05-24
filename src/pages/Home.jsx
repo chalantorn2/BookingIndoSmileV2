@@ -270,7 +270,7 @@ const Home = () => {
         />
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 font-kanit">
+          <div className="p-4 font-Prompt">
             {/* ส่วนแสดงตัวกรองสถานะและปุ่มแคปภาพ */}
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-white rounded-lg p-4 border border-gray-100">
               {/* ปุ่มแคปภาพ (ซ้าย) */}
@@ -292,7 +292,7 @@ const Home = () => {
                   options={{
                     bgColor: "#ffffff",
                     styles: {
-                      fontFamily: "'Kanit', sans-serif",
+                      fontFamily: "'Prompt', sans-serif",
                     },
                   }}
                   context="home"
@@ -367,9 +367,9 @@ const Home = () => {
             <div
               id="captureArea"
               ref={captureAreaRef}
-              className="font-kanit"
+              className="font-Prompt"
               style={{
-                fontFamily: "'Kanit', sans-serif",
+                fontFamily: "'Prompt', sans-serif",
                 backgroundColor: "white",
               }}
             >

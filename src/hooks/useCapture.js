@@ -36,12 +36,12 @@ const useCapture = (options = {}) => {
 
     checkFonts();
 
-    // เพิ่ม Font Kanit ถ้ายังไม่ได้โหลด
-    const fontLink = document.querySelector('link[href*="Kanit"]');
+    // เพิ่ม Font Prompt ถ้ายังไม่ได้โหลด
+    const fontLink = document.querySelector('link[href*="Prompt"]');
     if (!fontLink) {
       const link = document.createElement("link");
       link.href =
-        "https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap";
+        "https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap";
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }

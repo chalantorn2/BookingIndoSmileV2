@@ -8,7 +8,7 @@ import { saveAs } from "file-saver";
  * @returns {Promise<boolean>} - สถานะการโหลด Font
  */
 // ปรับปรุงฟังก์ชัน checkFontLoaded ใน captureService.js
-const checkFontLoaded = async (fontFamily = "Kanit") => {
+const checkFontLoaded = async (fontFamily = "Prompt") => {
   return new Promise((resolve) => {
     if (document.fonts && document.fonts.check) {
       // ลองตรวจสอบด้วยหลายขนาดและหลายน้ำหนัก
@@ -57,7 +57,7 @@ const prepareElementForCapture = (element, options = {}) => {
 
   // กำหนดสไตล์พื้นฐาน
   Object.assign(clonedElement.style, {
-    fontFamily: "'Kanit', sans-serif",
+    fontFamily: "'Prompt', sans-serif",
     backgroundColor: options.bgColor || "#ffffff",
     width: options.width || `${element.offsetWidth}px`,
     height: options.height || `${element.offsetHeight}px`,
@@ -81,13 +81,13 @@ const prepareElementForCapture = (element, options = {}) => {
  */
 const createImageBlob = async (element, options = {}) => {
   // ตรวจสอบว่า Font ถูกโหลดเรียบร้อยแล้ว
-  await checkFontLoaded(options.fontFamily || "Kanit");
+  await checkFontLoaded(options.fontFamily || "Prompt");
 
   // ตั้งค่าสำหรับ domtoimage
   const captureOptions = {
     bgcolor: options.bgColor || "#ffffff",
     style: {
-      fontFamily: "'Kanit', sans-serif",
+      fontFamily: "'Prompt', sans-serif",
       ...options.styles,
     },
     width: options.width || element.scrollWidth,
@@ -97,8 +97,8 @@ const createImageBlob = async (element, options = {}) => {
     imagePlaceholder:
       "data:image/png;base64,iVBORw0KGoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", // placeholder สำหรับรูปภาพ
     fontEmbedCSS: `
-    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap');
-    * { font-family: 'Kanit', sans-serif !important; }
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap');
+    * { font-family: 'Prompt', sans-serif !important; }
   `, // ฝังฟอนต์ CSS
   };
 
@@ -123,7 +123,7 @@ export const captureToImage = async (
   options = {}
 ) => {
   try {
-    await checkFontLoaded(options.fontFamily || "Kanit");
+    await checkFontLoaded(options.fontFamily || "Prompt");
 
     // ให้เวลาฟอนต์โหลดเพิ่มเติม
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -132,7 +132,7 @@ export const captureToImage = async (
     const originalStyles = element.getAttribute("style") || "";
     element.setAttribute(
       "style",
-      `${originalStyles}; font-family: 'Kanit', sans-serif !important;`
+      `${originalStyles}; font-family: 'Prompt', sans-serif !important;`
     );
 
     const blob = await createImageBlob(element, options);
@@ -178,12 +178,12 @@ export const captureToClipboard = async (element, options = {}) => {
  */
 export const captureToDataURL = async (element, options = {}) => {
   try {
-    await checkFontLoaded(options.fontFamily || "Kanit");
+    await checkFontLoaded(options.fontFamily || "Prompt");
 
     const captureOptions = {
       bgcolor: options.bgColor || "#ffffff",
       style: {
-        fontFamily: "'Kanit', sans-serif",
+        fontFamily: "'Prompt', sans-serif",
         ...options.styles,
       },
       width: options.width || element.scrollWidth,
@@ -207,13 +207,13 @@ export const captureToDataURL = async (element, options = {}) => {
  */
 export const captureWithOptions = async (element, options = {}) => {
   try {
-    await checkFontLoaded(options.fontFamily || "Kanit");
+    await checkFontLoaded(options.fontFamily || "Prompt");
 
     // กำหนดตัวเลือกพื้นฐาน
     const captureOptions = {
       bgcolor: options.bgColor || "#ffffff",
       style: {
-        fontFamily: "'Kanit', sans-serif",
+        fontFamily: "'Prompt', sans-serif",
         ...options.styles,
       },
       width: options.width || element.scrollWidth,

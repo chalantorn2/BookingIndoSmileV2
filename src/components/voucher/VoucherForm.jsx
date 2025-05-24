@@ -19,14 +19,14 @@ export const VoucherInput = ({
     placeholder={placeholder}
     className={`border-b border-gray-500 focus:outline-none ${width} text-center ${
       disabled ? "bg-gray-100 text-gray-400" : ""
-    } font-kanit ${className}`} // เพิ่ม className ที่รับเข้ามา
+    } font-Prompt ${className}`} // เพิ่ม className ที่รับเข้ามา
   />
 );
 
 // Component สำหรับแสดงรายการใน Service Option
 export const ServiceItem = ({ label, name, value, onChange, disabled }) => {
   return (
-    <div className="flex items-start mb-3 font-kanit">
+    <div className="flex items-start mb-3 font-Prompt">
       <span className="min-w-[80px] inline-block text-left">{label}:</span>
       <input
         type="text"
@@ -36,7 +36,7 @@ export const ServiceItem = ({ label, name, value, onChange, disabled }) => {
         disabled={disabled}
         className={`border-b border-gray-500 focus:outline-none w-4/5 text-center ${
           disabled ? "bg-gray-100 text-gray-400" : ""
-        } font-kanit`}
+        } font-Prompt`}
       />
     </div>
   );

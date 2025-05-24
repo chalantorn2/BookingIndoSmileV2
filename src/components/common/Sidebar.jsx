@@ -64,28 +64,12 @@ const Sidebar = () => {
       icon: <FileText size={20} />,
       permission: null,
     },
-
     {
       path: "/information",
       label: "Information",
       icon: <Database size={20} />,
       permission: null,
     },
-
-    // {
-    //   path: "/dashboard",
-    //   label: "Dashboard",
-    //   icon: <BarChart2 size={20} />,
-    //   disabled: true,
-    //   permission: null,
-    // },
-    // {
-    //   path: "/reports",
-    //   label: "Report",
-    //   icon: <PieChart size={20} />,
-    //   disabled: true,
-    //   permission: null,
-    // },
     {
       path: "/users",
       label: "Users Management",
@@ -111,17 +95,17 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`h-screen bg-blue-500 text-white flex flex-col transition-all duration-300 ${
+      className={`h-screen bg-blue-700 text-white flex flex-col transition-all duration-300 ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-blue-400">
+      <div className="p-4 border-b border-blue-600">
         <div className="flex items-center justify-between">
           {!collapsed && <h1 className="text-2xl font-bold">INDO Smile</h1>}
           <button
             onClick={toggleSidebar}
-            className="p-1 rounded-full hover:bg-blue-600 transition-colors"
+            className="p-1 rounded-full hover:bg-blue-800 transition-colors"
           >
             {collapsed ? (
               <svg
@@ -168,10 +152,10 @@ const Sidebar = () => {
                 className={`flex items-center p-3 rounded-lg transition-colors ${
                   item.disabled
                     ? "opacity-60 cursor-not-allowed"
-                    : "hover:bg-blue-600"
+                    : "hover:bg-blue-800"
                 } ${
                   location.pathname === item.path && !item.disabled
-                    ? "bg-white text-blue-500"
+                    ? "bg-white text-blue-700"
                     : ""
                 }`}
                 onClick={(e) => {
@@ -189,15 +173,15 @@ const Sidebar = () => {
       </nav>
       {/* User Info */}
       {user && (
-        <div className="p-4 border-t border-blue-400">
+        <div className="p-4 border-t border-blue-600">
           <div className="flex items-center">
-            <div className="rounded-full bg-blue-400 p-2 mr-3">
+            <div className="rounded-full bg-blue-600 p-2 mr-3">
               <User size={20} className="text-white" />
             </div>
             {!collapsed && (
               <div>
                 <div className="font-medium">{user.fullname}</div>
-                <div className="text-xs text-blue-100">
+                <div className="text-xs text-blue-200">
                   {user.role === "dev"
                     ? "Developer"
                     : user.role === "admin"
@@ -211,10 +195,10 @@ const Sidebar = () => {
       )}
 
       {/* Logout Button */}
-      <div className="p-2 border-t border-blue-400 ">
+      <div className="p-2 border-t border-blue-600">
         <button
           onClick={handleLogout}
-          className="flex items-center center p-1 pl-4 rounded-lg hover:bg-blue-600 transition-colors w-full"
+          className="flex items-center center p-1 pl-4 rounded-lg hover:bg-blue-800 transition-colors w-full"
         >
           <LogOut size={20} className="mr-3" />
           {!collapsed && <span>ออกจากระบบ</span>}

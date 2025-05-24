@@ -74,7 +74,7 @@ const TourVoucherForm = ({
 
   useEffect(() => {
     const img = new Image();
-    img.src = "../../assets/Tour and Ticket 5.png";
+    img.src = "../../assets/Final Logo.png";
     img.onload = () => setImageLoaded(true);
     img.onerror = () => {
       console.error("Failed to load logo image");
@@ -83,7 +83,7 @@ const TourVoucherForm = ({
 
     const fontLink = document.createElement("link");
     fontLink.href =
-      "https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap";
+      "https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap";
     fontLink.rel = "stylesheet";
     document.head.appendChild(fontLink);
     setFontLoaded(true);
@@ -123,12 +123,12 @@ const TourVoucherForm = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-4 font-kanit max-w-[1000px] mx-auto">
+    <div className="bg-white rounded-lg shadow-md p-4 mb-4 font-Prompt max-w-[1000px] mx-auto">
       <div className="flex justify-center gap-4 mb-4 print:hidden">
         <button
           className={`px-4 py-2 bg-green-600 text-white rounded-md flex items-center ${
             isSaving ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
-          } font-kanit text-sm`}
+          } font-Prompt text-sm`}
           onClick={handleSaveVoucher}
           disabled={isSaving}
         >
@@ -154,46 +154,46 @@ const TourVoucherForm = ({
 
       <div
         ref={printRef}
-        className="border border-gray-300 rounded-lg p-4 bg-white font-kanit"
+        className="border border-gray-300 rounded-lg p-4 bg-white font-Prompt"
         style={{
           pageBreakInside: "avoid",
           breakInside: "avoid",
           minHeight: "100%",
           overflow: "visible",
           width: "100%",
-          fontFamily: "Kanit, sans-serif",
+          fontFamily: "Prompt, sans-serif",
           lineHeight: "1.2",
         }}
       >
         <div className="flex flex-col sm:flex-row justify-between mb-4">
           <div className="flex items-center mb-2 sm:mb-0">
             <img
-              src="../../assets/Tour and Ticket 5.png"
+              src="../../assets/Final Logo.png"
               alt="INDO Smile Logo"
               className="h-12 mr-3"
               onError={(e) => (e.target.src = "/fallback-logo.png")}
             />
             <div>
-              <h2 className="text-lg font-bold font-kanit">
-                Seven Smile Tour And Ticket
+              <h2 className="text-lg font-bold font-Prompt">
+                INDO SMILE SOUTH SERVICES CO.,LTD.
               </h2>
-              <p className="text-xs font-kanit">
-                33 Maharat Road, Soi 8, Pak Nam Sub-district, Mueang Krabi
-                District, Krabi 81000, Thailand
+              <p className="text-xs font-Prompt">
+                199/100 Moo 9, Thepkrasattri Subdistrict, Thalang District,
+                Phuket Province 83110
               </p>
-              <p className="text-xs font-kanit">
-                095 265 5516, 083 969 1300 | TAT License No. 31/00878
+              <p className="text-xs font-Prompt">
+                095 265 5516, 082 253 6662 | TAT License No. 34/03566
               </p>
             </div>
           </div>
           <div className="flex flex-col justify-start">
             <div className="bg-green-600 text-white p-1 text-center mb-1">
-              <span className="block font-kanit text-sm">
+              <span className="block font-Prompt text-sm">
                 เลขที่: {voucherData.year_number || new Date().getFullYear()}
               </span>
             </div>
             <div className="bg-green-600 text-white p-1 text-center">
-              <span className="block font-kanit text-sm">
+              <span className="block font-Prompt text-sm">
                 เลขที่: {voucherData.sequence_number || "0001"}
               </span>
             </div>
@@ -202,7 +202,7 @@ const TourVoucherForm = ({
 
         <div className="flex flex-col sm:flex-row justify-between mb-4 gap-4">
           <div className="mb-2 sm:mb-0 flex-1 w-[60%]">
-            <span className=" font-kanit text-sm ">Customer's name:</span>
+            <span className=" font-Prompt text-sm ">Customer's name:</span>
             <VoucherInput
               name="customer_name"
               value={voucherData.customer_name}
@@ -212,7 +212,7 @@ const TourVoucherForm = ({
             />
           </div>
           <div className="flex-1 w-[40%]">
-            <span className="font-bold font-kanit text-sm">
+            <span className="font-bold font-Prompt text-sm">
               Contact person:
             </span>
             <VoucherInput
@@ -225,13 +225,13 @@ const TourVoucherForm = ({
         </div>
 
         <div className="text-center mb-3">
-          <h2 className="text-xl font-extrabold font-kanit bg-green-100 py-1">
+          <h2 className="text-xl font-extrabold font-Prompt bg-green-100 py-1">
             Service Order for Tour
           </h2>
         </div>
 
         <div className="border border-gray-300 p-3 mb-4">
-          <h3 className="text-base font-bold font-kanit mb-2">Tour</h3>
+          <h3 className="text-base font-bold font-Prompt mb-2">Tour</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <ServiceItem
@@ -255,7 +255,7 @@ const TourVoucherForm = ({
                         tour_detail: newValue,
                       }));
                     }}
-                    className="focus:outline-none w-full text-center font-kanit whitespace-pre-wrap min-h-[1.2em] py-0"
+                    className="focus:outline-none w-full text-center font-Prompt whitespace-pre-wrap min-h-[1.2em] py-0"
                     style={{ textAlign: "center", lineHeight: "1.2" }}
                   >
                     {voucherData.tour_detail || ""}
@@ -273,7 +273,7 @@ const TourVoucherForm = ({
                     name="tour_pickup_time"
                     value={voucherData.tour_pickup_time || ""}
                     onChange={handleInputChange}
-                    className="border-b border-gray-500 focus:outline-none w-full text-center font-kanit whitespace-pre-wrap"
+                    className="border-b border-gray-500 focus:outline-none w-full text-center font-Prompt whitespace-pre-wrap"
                     style={{ textAlign: "center" }}
                   />
                 </div>
@@ -322,7 +322,7 @@ const TourVoucherForm = ({
                   onChange={() => handlePaymentOptionChange("no_payment")}
                   className="mr-2 h-4 w-4 mt-1"
                 />
-                <label htmlFor="no_payment" className="text-sm font-kanit">
+                <label htmlFor="no_payment" className="text-xs font-Prompt">
                   ไม่ต้องเก็บเงินใดๆ จากผู้เดินทางอีก <br />
                   The clients do not have to pay any more
                 </label>
@@ -339,7 +339,10 @@ const TourVoucherForm = ({
                     onChange={() => handlePaymentOptionChange("pay_at_office")}
                     className="mr-2 h-4 w-4 mt-1"
                   />
-                  <label htmlFor="pay_at_office" className="text-sm font-kanit">
+                  <label
+                    htmlFor="pay_at_office"
+                    className="text-xs font-Prompt"
+                  >
                     ผู้เดินทางต้องชำระเงิน ก่อนเข้ารับบริการอีกเป็นจำนวนเงิน{" "}
                     <br />
                     The clients are to pay at the referred office. the unpaid
@@ -364,14 +367,14 @@ const TourVoucherForm = ({
 
         <div className="mb-4">
           <div className="flex mb-1">
-            <span className="font-bold font-kanit text-sm">Remark:</span>
+            <span className="font-bold font-Prompt text-sm">Remark:</span>
             <div className="relative flex-1">
               <input
                 type="text"
                 name="remark"
                 value={voucherData.remark || ""}
                 onChange={handleInputChange}
-                className="border-b border-gray-500 focus:outline-none w-full text-center font-kanit whitespace-pre-wrap"
+                className="border-b border-gray-500 focus:outline-none w-full text-center font-Prompt whitespace-pre-wrap"
                 style={{ textAlign: "center" }}
               />
             </div>
@@ -387,7 +390,7 @@ const TourVoucherForm = ({
               width="w-40"
             />
             <div className="border-t border-gray-500 w-40 mx-auto"></div>
-            <p className="font-medium mt-1 font-kanit text-sm">
+            <p className="font-medium mt-1 font-Prompt text-sm">
               Customer's signature
             </p>
           </div>
@@ -399,12 +402,12 @@ const TourVoucherForm = ({
               width="w-40"
             />
             <div className="border-t border-gray-500 w-40 mx-auto"></div>
-            <p className="font-medium mt-1 font-kanit text-sm">Issue by</p>
+            <p className="font-medium mt-1 font-Prompt text-sm">Issue by</p>
           </div>
         </div>
 
         <div className="text-center mt-4 text-xs">
-          <p className="font-kanit">
+          <p className="font-Prompt">
             *** This voucher-ticket is non refundable and can use on the
             specific date and the time only. ***
           </p>

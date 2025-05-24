@@ -243,7 +243,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   };
 
   return (
-    <div className="relative space-y-3 font-kanit">
+    <div className="relative space-y-3 font-Prompt">
       {sortedBookings.map((booking, index) => {
         const firstName = booking.orders?.first_name || "";
         const lastName = booking.orders?.last_name || "";
@@ -277,7 +277,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                 options={{
                   bgColor: "#ffffff",
                   styles: {
-                    fontFamily: "'Kanit', sans-serif",
+                    fontFamily: "'Prompt', sans-serif",
                   },
                 }}
                 context="bookingList"
@@ -302,7 +302,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
               style={{
                 borderLeftWidth: "5px",
                 borderLeftColor: type === "tour" ? "#16a34a" : "#2563eb",
-                fontFamily: "'Kanit', sans-serif",
+                fontFamily: "'Prompt', sans-serif",
                 backgroundColor: "white",
               }}
             >
