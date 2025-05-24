@@ -1,0 +1,121 @@
+/* src/styles/invoice.css */
+
+/* สไตล์ทั่วไป */
+.invoice-title {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+/* สไตล์สำหรับการพิมพ์ */
+@media print {
+  /* รีเซ็ตทุกอย่าง */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    color: black !important;
+    background-color: white !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ซ่อนองค์ประกอบที่ไม่จำเป็นสำหรับการพิมพ์ */
+  .print\\:hidden,
+  .print-hidden,
+  button,
+  .container,
+  nav,
+  footer,
+  .bg-gray-50,
+  .py-6,
+  .shadow-md,
+  .rounded-lg,
+  .text-center {
+    display: none !important;
+  }
+
+  body,
+  html {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: white !important;
+    font-family: "Kanit", sans-serif !important;
+    font-size: 12pt !important;
+    overflow: visible !important;
+  }
+
+  /* จัดการหน้ากระดาษ */
+  @page {
+    size: landscape;
+    margin: 0.8cm;
+  }
+
+  /* แสดง/ซ่อนองค์ประกอบตามต้องการ */
+  #printRef,
+  #printRef * {
+    visibility: visible !important;
+    display: block !important;
+  }
+
+  /* สไตล์ตาราง */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  tr,
+  td,
+  th,
+  thead,
+  tbody {
+    visibility: visible !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  th,
+  td {
+    border: 1px solid black !important;
+    padding: 4px !important;
+    font-size: 10pt !important;
+    vertical-align: middle !important;
+  }
+
+  /* สไตล์แถวสรุป */
+  tr.total-row td {
+    font-weight: bold !important;
+    background-color: #f8f9fa !important;
+  }
+
+  tr.grand-total-row td {
+    font-weight: bold !important;
+    background-color: #f0fff4 !important;
+  }
+
+  /* จัดการการจัดตำแหน่ง */
+  .text-right {
+    text-align: right !important;
+  }
+
+  .text-center {
+    text-align: center !important;
+  }
+
+  /* จัดการส่วนหัวและท้าย */
+  .invoice-header-right {
+    text-align: right !important;
+  }
+
+  .invoice-footer {
+    page-break-inside: avoid !important;
+    margin-top: 1cm !important;
+  }
+}

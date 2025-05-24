@@ -1,0 +1,63 @@
+โครงสร้างตาราง
+ตาราง: information
+คอลัมน์: id, category, value, description, active, created_at, updated_at, phone
+
+ไม่มี Foreign Key ในตารางนี้
+
+ตาราง: invoices
+คอลัมน์: id, invoice_name, invoice_date, payment_ids, total_amount, total_cost, total_selling_price, total_profit, created_at, updated_at
+
+ไม่มี Foreign Key ในตารางนี้
+
+ตาราง: orders
+คอลัมน์: id, first_name, last_name, agent_name, start_date, end_date, created_at, updated_at, reference_id, pax, note, completed, pax_adt, pax_chd, pax_inf, agent_id
+
+Foreign Keys:
+
+1. reference_id
+
+2. agent_id
+
+ตาราง: payments
+คอลัมน์: id, payment_id, order_id, first_name, last_name, agent_name, pax, bookings, total_cost, total_selling_price, total_profit, invoiced, created_at, updated_at, ref
+
+Foreign Keys:
+
+1. payment_id
+
+2. order_id
+
+ตาราง: sequences
+คอลัมน์: id, key, value, created_at, updated_at
+
+ไม่มี Foreign Key ในตารางนี้
+
+ตาราง: tour_bookings
+คอลัมน์: id, order_id, tour_date, tour_detail, pax, status, created_at, updated_at, tour_hotel, tour_room_no, tour_pickup_time, send_to, tour_type, tour_contact_no, note, reference_id, cost_price, selling_price, payment_status, payment_date, payment_note, voucher_created, pax_adt, pax_chd, pax_inf
+
+Foreign Keys:
+
+1. order_id
+
+2. reference_id
+
+ตาราง: transfer_bookings
+คอลัมน์: id, order_id, transfer_date, transfer_time, pickup_location, drop_location, pax, transfer_detail, status, created_at, updated_at, transfer_flight, send_to, car_model, phone_number, transfer_type, transfer_ftime, note, reference_id, cost_price, selling_price, payment_status, payment_date, payment_note, voucher_created, pax_adt, pax_chd, pax_inf
+
+Foreign Keys:
+
+1. order_id
+
+2. reference_id
+
+ตาราง: users
+คอลัมน์: id, username, password_hash, fullname, role, active, created_at, updated_at
+
+ไม่มี Foreign Key ในตารางนี้
+
+ตาราง: vouchers
+คอลัมน์: id, year_number, sequence_number, customer_name, contact_person, accommodation, accommodation_at, accommodation_pax, accommodation_check_in, accommodation_check_out, accommodation_room, accommodation_night, accommodation_price, transfer, transfer_from, transfer_to, transfer_by, transfer_pax, transfer_date, transfer_time, transfer_price, transfer_pickup_time, tour, tour_name, tour_pax, tour_by, tour_date, tour_price, tour_pickup_at, payment_option, payment_amount, remark, issue_by, booking_id, booking_type, created_at, updated_at, customer_signature, tour_detail, transfer_type, transfer_detail, transfer_license_plate, transfer_flight, transfer_ftime, tour_pickup_time
+
+Foreign Keys:
+
+1. booking_id

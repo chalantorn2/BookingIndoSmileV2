@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ปรับปรุงข้อมูล PAX</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 p-6">
+    <div class="max-w-lg mx-auto bg-white rounded shadow-md p-6">
+      <h1 class="text-xl font-bold mb-4">ปรับปรุงข้อมูล PAX</h1>
+      <p class="text-gray-600 mb-4">
+        คัดลอกข้อมูลจากฟิลด์ pax ไปยังฟิลด์ pax_adt และตั้งค่า pax_chd, pax_inf
+        เป็น 0
+      </p>
+
+      <div class="my-4">
+        <button
+          id="update-btn"
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+        >
+          เริ่มปรับปรุงข้อมูล
+        </button>
+      </div>
+
+      <div id="progress" class="hidden">
+        <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+          <div
+            id="progress-bar"
+            class="bg-blue-600 h-4 rounded-full transition-all duration-200"
+            style="width: 0%"
+          ></div>
+        </div>
+        <p id="status" class="text-center text-sm text-gray-600">
+          กำลังดำเนินการ...
+        </p>
+      </div>
+
+      <div id="result" class="mt-4"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("update-btn")
+        .addEventListener("click", async function () {
+          const button = this;
+          const progressDiv = document.getElementById("progress");
+          const progressBar = document.getElementById("progress-bar");
+          const statusText = document.getElementById("status");
+          const resultDiv = document.getElementById("result");
+
+          button.disabled = true;
+          button.textContent = "กำลังดำเนินการ...";
+          progressDiv.classList.remove("hidden");
+          resultDiv.innerHTML = "";
+
+          // ตั้งค่า Supabase
+          const SUPABASE_URL = "https://sixwsodfumroethflcst.supabase.co";
+          const SUPABASE_KEY =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpeHdzb2RmdW1yb2V0aGZsY3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE1ODA1MTYsImV4cCI6MjA1NzE1NjUxNn0.UmeXSf-aKFrOk2HoXHlt3l8OAlwsTlhPIjsm08dVRHQ";
+
+          const tables = ["orders", "tour_bookings", "transfer_bookings"];
+          let totalUpdated = 0;
+
+          try {
+            for (const table of tables) {
+              statusText.textContent = `กำลังอัปเดตตาราง ${table}...`;
+              let tableUpdated = 0;
+
+              // 1. ดึงข้อมูลจากตาราง
+              const fetchResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/${table}?select=id,pax,pax_adt,pax_chd,pax_inf`,
+                {
+                  headers: {
+                    apikey: SUPABASE_KEY,
+                    Authorization: `Bearer ${SUPABASE_KEY}`,
+                  },
+                }
+              );
+
+              if (!fetchResponse.ok) {
+                throw new Error(
+                  `ไม่สามารถดึงข้อมูลจากตาราง ${table} ได้: ${fetchResponse.statusText}`
+                );
+              }
+
+              const rows = await fetchResponse.json();
+              const totalRows = rows.length;
+
+              // 2. อัปเดตข้อมูลทีละแถว
+              for (let i = 0; i < totalRows; i++) {
+                const row = rows[i];
+
+                // เตรียมข้อมูลสำหรับอัปเดต
+                const updateData = {};
+                let needsUpdate = false;
+
+                // คัดลอก pax ไปยัง pax_adt เมื่อ pax_adt เป็น null หรือ 0
+                if (row.pax && (!row.pax_adt || row.pax_adt === 0)) {
+                  updateData.pax_adt = row.pax;
+                  needsUpdate = true;
+                }
+
+                // ตั้งค่า pax_chd เป็น 0 เมื่อเป็น null
+                if (row.pax_chd === null || row.pax_chd === undefined) {
+                  updateData.pax_chd = 0;
+                  needsUpdate = true;
+                }
+
+                // ตั้งค่า pax_inf เป็น 0 เมื่อเป็น null
+                if (row.pax_inf === null || row.pax_inf === undefined) {
+                  updateData.pax_inf = 0;
+                  needsUpdate = true;
+                }
+
+                // อัปเดตเฉพาะเมื่อจำเป็น
+                if (needsUpdate) {
+                  const updateResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/${table}?id=eq.${row.id}`,
+                    {
+                      method: "PATCH",
+                      headers: {
+                        apikey: SUPABASE_KEY,
+                        Authorization: `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json",
+                        Prefer: "return=minimal",
+                      },
+                      body: JSON.stringify(updateData),
+                    }
+                  );
+
+                  if (updateResponse.ok) {
+                    tableUpdated++;
+                    totalUpdated++;
+                  }
+                }
+
+                // อัปเดตความคืบหน้า
+                const tableProgress = (i + 1) / totalRows;
+                const overallProgress =
+                  ((tables.indexOf(table) + tableProgress) / tables.length) *
+                  100;
+                progressBar.style.width = `${Math.floor(overallProgress)}%`;
+              }
+
+              // แสดงผลลัพธ์ของการอัปเดตตารางนี้
+              resultDiv.innerHTML += `<p class="mb-2">✅ อัปเดตตาราง ${table}: ${tableUpdated} แถวจากทั้งหมด ${totalRows} แถว</p>`;
+            }
+
+            // อัปเดตความคืบหน้าให้เสร็จสมบูรณ์
+            progressBar.style.width = "100%";
+            statusText.textContent = "อัปเดตข้อมูลเสร็จสิ้น";
+
+            // แสดงสรุปผลการอัปเดต
+            resultDiv.innerHTML += `<p class="mt-4 p-3 bg-green-100 text-green-800 rounded-lg font-medium">
+          สรุป: อัปเดตทั้งหมด ${totalUpdated} แถวเสร็จสิ้นเมื่อ ${new Date().toLocaleTimeString()}
+        </p>`;
+          } catch (error) {
+            console.error("Error:", error);
+            statusText.textContent = "เกิดข้อผิดพลาด";
+            progressBar.classList.remove("bg-blue-600");
+            progressBar.classList.add("bg-red-600");
+            resultDiv.innerHTML = `<p class="p-3 bg-red-100 text-red-800 rounded-lg">เกิดข้อผิดพลาด: ${error.message}</p>`;
+          } finally {
+            button.disabled = false;
+            button.textContent = "เริ่มปรับปรุงข้อมูล";
+          }
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ดูโครงสร้างและข้อมูลตาราง</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #output {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ดูโครงสร้างและข้อมูลตารางใน Supabase</h1>
+    <button onclick="showSchema()">ดูโครงสร้างตาราง</button>
+    <button onclick="showSchemaAndData()">ดูโครงสร้างและข้อมูล</button>
+    <div id="output"></div>
+
+    <script>
+      // กำหนดค่า Supabase โดยตรง
+      const supabaseUrl = "https://sixwsodfumroethflcst.supabase.co";
+      const supabaseAnonKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpeHdzb2RmdW1yb2V0aGZsY3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE1ODA1MTYsImV4cCI6MjA1NzE1NjUxNn0.UmeXSf-aKFrOk2HoXHlt3l8OAlwsTlhPIjsm08dVRHQ";
+
+      // สร้าง Supabase client
+      const supabaseClient = supabase.createClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+          },
+        }
+      );
+
+      // ฟังก์ชันช่วยเหลือสำหรับการดึงข้อมูล
+      async function fetchData({
+        table,
+        columns = "*",
+        filters = {},
+        limit = null,
+        orderBy = null,
+        orderDirection = "desc",
+        page = null,
+        pageSize = 10,
+      }) {
+        try {
+          let query = supabaseClient.from(table).select(columns);
+
+          // เพิ่มการกรอง
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              if (typeof value === "object" && value.operator) {
+                query = query.filter(key, value.operator, value.value);
+              } else {
+                query = query.eq(key, value);
+              }
+            }
+          });
+
+          // เพิ่มการเรียงลำดับ
+          if (orderBy) {
+            query = query.order(orderBy, {
+              ascending: orderDirection === "asc",
+            });
+          }
+
+          // เพิ่มการจำกัดจำนวน
+          if (limit) {
+            query = query.limit(limit);
+          }
+
+          // เพิ่มการแบ่งหน้า
+          if (page !== null) {
+            const from = page * pageSize;
+            const to = from + pageSize - 1;
+            query = query.range(from, to);
+          }
+
+          const { data, error, count } = await query;
+
+          if (error) {
+            throw error;
+          }
+
+          return { data, count };
+        } catch (error) {
+          console.error(`Error fetching data from ${table}:`, error);
+          throw error;
+        }
+      }
+
+      const tables = [
+        "information",
+        "invoices",
+        "orders",
+        "payments",
+        "sequences",
+        "tour_bookings",
+        "transfer_bookings",
+        "users",
+        "vouchers",
+      ];
+
+      async function getTableSchema(table) {
+        const { data } = await fetchData({ table, limit: 1 });
+        if (data && data.length > 0) {
+          return Object.keys(data[0]);
+        }
+        return [];
+      }
+
+      // ฟังก์ชันตรวจสอบว่าเป็น Foreign Key หรือไม่ (ลงท้ายด้วย _id)
+      function identifyForeignKeys(columns) {
+        const foreignKeys = [];
+        columns.forEach((col) => {
+          if (col.endsWith("_id")) {
+            foreignKeys.push(col);
+          }
+        });
+        return foreignKeys;
+      }
+
+      async function showSchema() {
+        const output = document.getElementById("output");
+        output.innerHTML = "<h2>โครงสร้างตาราง</h2>";
+
+        for (const table of tables) {
+          try {
+            const columns = await getTableSchema(table);
+            const foreignKeys = identifyForeignKeys(columns);
+            output.innerHTML += `<h3>ตาราง: ${table}</h3>`;
+            if (columns.length > 0) {
+              output.innerHTML += `<p>คอลัมน์: ${columns.join(", ")}</p>`;
+              if (foreignKeys.length > 0) {
+                output.innerHTML += "<p>Foreign Keys:</p>";
+                foreignKeys.forEach((fk, index) => {
+                  output.innerHTML += `<p>${index + 1}. ${fk}</p>`;
+                });
+              } else {
+                output.innerHTML += "<p>ไม่มี Foreign Key ในตารางนี้ </p>";
+              }
+            } else {
+              output.innerHTML += "<p>ไม่มีข้อมูลในตารางนี้</p>";
+            }
+          } catch (error) {
+            output.innerHTML += `<p style="color: red;">เกิดข้อผิดพลาดในการดึงโครงสร้างของตาราง ${table}: ${error.message}</p>`;
+          }
+        }
+      }
+
+      async function showSchemaAndData() {
+        const output = document.getElementById("output");
+        output.innerHTML = "<h2>โครงสร้างและข้อมูลตาราง</h2>";
+
+        for (const table of tables) {
+          try {
+            const columns = await getTableSchema(table);
+            const foreignKeys = identifyForeignKeys(columns);
+            const { data } = await fetchData({ table });
+
+            output.innerHTML += `<h3>ตาราง: ${table}</h3>`;
+            if (columns.length > 0) {
+              output.innerHTML += `<p>คอลัมน์: ${columns.join(", ")}</p>`;
+              if (foreignKeys.length > 0) {
+                output.innerHTML += "<p>Foreign Keys:</p>";
+                foreignKeys.forEach((fk, index) => {
+                  output.innerHTML += `<p>${index + 1}. ${fk}</p>`;
+                });
+              } else {
+                output.innerHTML +=
+                  "<p>ไม่มี Foreign Key ในตารางนี้ (ตามสมมติฐานชื่อคอลัมน์)</p>";
+              }
+              if (data && data.length > 0) {
+                let tableHtml = "<table><thead><tr>";
+                columns.forEach((col) => {
+                  tableHtml += `<th>${col}</th>`;
+                });
+                tableHtml += "</tr></thead><tbody>";
+                data.forEach((row) => {
+                  tableHtml += "<tr>";
+                  columns.forEach((col) => {
+                    tableHtml += `<td>${row[col] ?? "N/A"}</td>`;
+                  });
+                  tableHtml += "</tr>";
+                });
+                tableHtml += "</tbody></table>";
+                output.innerHTML += tableHtml;
+              } else {
+                output.innerHTML += "<p>ไม่มีข้อมูลในตารางนี้</p>";
+              }
+            } else {
+              output.innerHTML += "<p>ไม่มีโครงสร้างในตารางนี้</p>";
+            }
+          } catch (error) {
+            output.innerHTML += `<p style="color: red;">เกิดข้อผิดพลาดในการดึงข้อมูลของตาราง ${table}: ${error.message}</p>`;
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
