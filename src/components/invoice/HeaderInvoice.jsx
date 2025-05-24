@@ -7,13 +7,13 @@ const HeaderInvoice = ({ invoiceDate, handleEditInvoiceDate }) => {
         <img
           id="bannerImage"
           src="../../assets/banner-06.png"
-          alt="SevenSmile Tour & Ticket"
+          alt="INDO Smile Tour & Ticket"
           style={{ maxWidth: "80%" }}
           onError={(e) => {
             e.target.onerror = null;
             e.target.style.display = "none";
             e.target.parentNode.innerHTML =
-              '<div style="font-size: 2rem; font-weight: bold;">SevenSmile<div style="font-size: 1.2rem; font-weight: normal;">Tour & Ticket</div></div>';
+              '<div style="font-size: 2rem; font-weight: bold;">INDO Smile<div style="font-size: 1.2rem; font-weight: normal;">Tour & Ticket</div></div>';
           }}
         />
       </div>

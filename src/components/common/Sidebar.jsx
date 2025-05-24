@@ -118,7 +118,7 @@ const Sidebar = () => {
       {/* Sidebar Header */}
       <div className="p-4 border-b border-blue-400">
         <div className="flex items-center justify-between">
-          {!collapsed && <h1 className="text-2xl font-bold">SevenSmile</h1>}
+          {!collapsed && <h1 className="text-2xl font-bold">INDO Smile</h1>}
           <button
             onClick={toggleSidebar}
             className="p-1 rounded-full hover:bg-blue-600 transition-colors"

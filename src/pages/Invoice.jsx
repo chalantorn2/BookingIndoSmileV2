@@ -779,7 +779,7 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
      </style>
      <div class="invoice-header">
        <div>
-         <img id="bannerImage" src="../../assets/banner-06.png" alt="SevenSmile Tour & Ticket" />
+         <img id="bannerImage" src="../../assets/banner-06.png" alt="INDO Smile Tour & Ticket" />
        </div>
        <div class="invoice-header-right">
          <h2 style="font-size: 18px; margin-bottom: 5px;">INVOICE</h2>
@@ -982,9 +982,9 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
     printWindow.document.write(`
      <div class="invoice-footer">
        <div>
-         <p style="font-weight: bold; margin-bottom: 5px;">PAYMENT TO SEVENSMILE</p>
+         <p style="font-weight: bold; margin-bottom: 5px;">PAYMENT TO INDO Smile</p>
          <p>KBank 255-2431-068</p>
-         <p>ACCT : SEVENSMILE CO., LTD.</p>
+         <p>ACCT : INDO Smile CO., LTD.</p>
        </div>
        <div style="text-align: right;">
          <p style="font-weight: bold; font-size: 14px;">GRAND TOTAL: ${formatNumberWithCommas(

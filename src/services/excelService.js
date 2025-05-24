@@ -16,8 +16,8 @@ export const exportBookingsToExcel = async (
     const workbook = new ExcelJS.Workbook();
 
     // ตั้งค่า properties ของ workbook
-    workbook.creator = "SevenSmile Booking System";
-    workbook.lastModifiedBy = "SevenSmile";
+    workbook.creator = "INDO Smile Booking System";
+    workbook.lastModifiedBy = "INDO Smile";
     workbook.created = new Date();
     workbook.modified = new Date();
 

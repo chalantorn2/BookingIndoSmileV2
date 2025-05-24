@@ -169,7 +169,7 @@ const TourVoucherForm = ({
           <div className="flex items-center mb-2 sm:mb-0">
             <img
               src="../../assets/Tour and Ticket 5.png"
-              alt="SevenSmile Logo"
+              alt="INDO Smile Logo"
               className="h-12 mr-3"
               onError={(e) => (e.target.src = "/fallback-logo.png")}
             />

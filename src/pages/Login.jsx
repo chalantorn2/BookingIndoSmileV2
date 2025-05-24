@@ -75,7 +75,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">SevenSmile</h1>
+          <h1 className="text-3xl font-bold text-blue-600 mb-2">INDO Smile</h1>
           <p className="text-gray-600">เข้าสู่ระบบจัดการการจอง</p>
         </div>
 
