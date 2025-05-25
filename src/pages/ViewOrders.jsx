@@ -48,40 +48,82 @@ const ViewOrders = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [paginatedOrders, setPaginatedOrders] = useState([]);
 
-  // First load effect - ใช้ searchOrders แทน fetchAllOrders
+  // เพิ่ม state สำหรับการติดตาม filter ที่ใช้จริง
+  const [appliedFilters, setAppliedFilters] = useState({
+    startDate: "",
+    endDate: "",
+    searchTerm: "",
+    filterType: "all",
+  });
+
+  // Load orders on mount
   useEffect(() => {
+    // Set initial applied filters
+    setAppliedFilters({
+      startDate,
+      endDate,
+      searchTerm: "",
+      filterType: "all",
+    });
     fetchFilteredOrders();
   }, []);
 
+  // Update pagination when orders or current page changes
+  useEffect(() => {
+    if (orders.length > 0) {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginated = orders.slice(startIndex, endIndex);
+      setPaginatedOrders(paginated);
+      setTotalPages(Math.ceil(orders.length / itemsPerPage));
+    } else {
+      setPaginatedOrders([]);
+      setTotalPages(1);
+    }
+  }, [orders, currentPage, itemsPerPage]);
+
   // Load orders with filters
-  const fetchFilteredOrders = async () => {
+  const fetchFilteredOrders = async (customFilters = null) => {
     setLoading(true);
     setError(null);
 
     try {
+      // ใช้ filters ที่ส่งมาหรือใช้ appliedFilters
+      const filtersToUse = customFilters || appliedFilters;
+
+      console.log("Fetching with filters:", filtersToUse);
+
       const result = await searchOrders({
-        startDate,
-        endDate,
-        searchTerm,
-        filterType,
+        startDate: filtersToUse.startDate,
+        endDate: filtersToUse.endDate,
+        searchTerm: filtersToUse.searchTerm,
+        filterType: filtersToUse.filterType,
       });
 
       if (result.error) throw new Error(result.error);
 
+      console.log("Fetched orders:", result.orders.length);
       setOrders(result.orders);
-      setTotalPages(Math.ceil(result.orders.length / itemsPerPage));
+      setCurrentPage(1); // Reset to first page when filtering
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError(err.message || "ไม่สามารถโหลดข้อมูล Order ได้");
       setOrders([]);
+      setPaginatedOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ในฟังก์ชัน handleViewOrderDetails
+  // Handle view order details
   const handleViewOrderDetails = async (order) => {
+    if (!order || !order.id) {
+      showError("ไม่พบข้อมูล Order");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -94,9 +136,6 @@ const ViewOrders = () => {
       }
 
       console.log("Order details received:", orderDetails);
-      console.log("Tour bookings:", orderDetails?.tourBookings);
-      console.log("Transfer bookings:", orderDetails?.transferBookings);
-
       setSelectedOrder(orderDetails);
       setIsModalOpen(true);
     } catch (err) {
@@ -118,7 +157,7 @@ const ViewOrders = () => {
       if (!success) throw new Error(error);
 
       showSuccess("บันทึกข้อมูลเรียบร้อยแล้ว");
-      await fetchFilteredOrders();
+      await fetchFilteredOrders(); // Refresh with current filters
 
       return { success: true };
     } catch (err) {
@@ -136,7 +175,7 @@ const ViewOrders = () => {
       if (!success) throw new Error(error);
 
       showSuccess("บันทึกหมายเหตุเรียบร้อยแล้ว");
-      await fetchFilteredOrders();
+      await fetchFilteredOrders(); // Refresh with current filters
     } catch (err) {
       console.error("Error updating note:", err);
       showError("ไม่สามารถบันทึกหมายเหตุได้");
@@ -163,7 +202,7 @@ const ViewOrders = () => {
 
       showSuccess("ลบ Order เรียบร้อยแล้ว");
       setIsModalOpen(false);
-      await fetchFilteredOrders();
+      await fetchFilteredOrders(); // Refresh with current filters
 
       return { success: true };
     } catch (err) {
@@ -175,43 +214,87 @@ const ViewOrders = () => {
 
   // Handle add booking to order
   const handleAddBooking = (orderId, bookingType) => {
-    // ส่วนนี้จะต้องพัฒนาต่อไป เช่น เปิด modal เพื่อเลือก booking ที่ต้องการเพิ่ม
     showInfo(
       `ฟีเจอร์การเพิ่ม ${bookingType} booking ให้กับ Order อยู่ระหว่างการพัฒนา`
     );
   };
 
-  // Handle search term change
+  // Handle search term change (live search)
   const handleSearchChange = (term) => {
     setSearchTerm(term);
+
+    // Update applied filters and fetch immediately for live search
+    const newFilters = {
+      ...appliedFilters,
+      searchTerm: term,
+    };
+    setAppliedFilters(newFilters);
     setCurrentPage(1);
+
+    // Debounce the search if needed
+    setTimeout(() => {
+      fetchFilteredOrders(newFilters);
+    }, 300);
   };
 
   // Handle pagination
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   // Handle filter type change
   const handleFilterTypeChange = (type) => {
     setFilterType(type);
-    setCurrentPage(1);
   };
 
   // Handle apply filters
   const handleApplyFilters = () => {
-    fetchFilteredOrders();
+    const newFilters = {
+      startDate,
+      endDate,
+      searchTerm,
+      filterType,
+    };
+
+    console.log("Applying filters:", newFilters);
+    setAppliedFilters(newFilters);
+    setCurrentPage(1);
+    fetchFilteredOrders(newFilters);
   };
 
+  // Handle order deleted callback
   const handleOrderDeleted = async () => {
-    await fetchFilteredOrders(); // รีเฟรชข้อมูล orders
+    await fetchFilteredOrders(); // Refresh with current filters
   };
 
-  // Calculate pagination
-  const getPaginatedOrders = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return orders.slice(startIndex, endIndex);
+  // Generate pagination buttons
+  const getPaginationButtons = () => {
+    const buttons = [];
+    const maxButtons = 5;
+
+    if (totalPages <= maxButtons) {
+      for (let i = 1; i <= totalPages; i++) {
+        buttons.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= maxButtons; i++) {
+          buttons.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - maxButtons + 1; i <= totalPages; i++) {
+          buttons.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          buttons.push(i);
+        }
+      }
+    }
+
+    return buttons;
   };
 
   return (
@@ -231,7 +314,7 @@ const ViewOrders = () => {
         onSearchChange={handleSearchChange}
         onFilterTypeChange={handleFilterTypeChange}
         onApplyFilters={handleApplyFilters}
-        onRefresh={fetchFilteredOrders}
+        onRefresh={() => fetchFilteredOrders()}
       />
 
       <div className="flex justify-between items-center mb-4">
@@ -250,7 +333,7 @@ const ViewOrders = () => {
 
       {loading ? (
         <div className="text-center py-8 bg-white rounded-lg shadow-md">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent "></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
           <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
         </div>
       ) : error ? (
@@ -261,7 +344,7 @@ const ViewOrders = () => {
         <>
           {/* Show table view */}
           <OrderTable
-            orders={getPaginatedOrders()}
+            orders={paginatedOrders}
             onViewDetails={handleViewOrderDetails}
             onUpdateNote={handleUpdateNote}
           />
@@ -273,45 +356,32 @@ const ViewOrders = () => {
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border rounded-md flex items-center disabled:opacity-50"
+                  className="px-3 py-1 border rounded-md flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={16} className="mr-1" />
                   ก่อนหน้า
                 </button>
 
                 <div className="flex mx-2">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`w-8 h-8 flex items-center justify-center rounded-md ${
-                          currentPage === pageNum
-                            ? "bg-blue-600 text-white"
-                            : "border text-gray-700 hover:bg-gray-100"
-                        } mx-1`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                  {getPaginationButtons().map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-md ${
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white"
+                          : "border text-gray-700 hover:bg-gray-100"
+                      } mx-1`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
                 </div>
 
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 border rounded-md flex items-center disabled:opacity-50"
+                  className="px-3 py-1 border rounded-md flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ถัดไป
                   <ChevronRight size={16} className="ml-1" />

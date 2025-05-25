@@ -9,6 +9,52 @@ import {
 } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 
+// แยก component สำหรับ note cell เพื่อหลีกเลี่ยงปัญหา hooks
+const NoteCell = ({ order, onUpdateNote }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [noteText, setNoteText] = useState(order.note || "");
+
+  const handleSaveNote = () => {
+    onUpdateNote(order.id, noteText);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSaveNote();
+    } else if (e.key === "Escape") {
+      setNoteText(order.note || "");
+      setIsEditing(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center">
+        <input
+          type="text"
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          className="border p-1 w-full rounded text-sm"
+          autoFocus
+          onBlur={handleSaveNote}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="cursor-pointer hover:bg-gray-100 p-1 rounded flex items-center"
+      onClick={() => setIsEditing(true)}
+    >
+      <FileText size={16} className="mr-1 text-gray-400" />
+      <span className="truncate">{order.note || "คลิกเพื่อเพิ่มบันทึก"}</span>
+    </div>
+  );
+};
+
 const OrderTable = ({ orders, onViewDetails, onUpdateNote }) => {
   const [sortField, setSortField] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
@@ -57,45 +103,8 @@ const OrderTable = ({ orders, onViewDetails, onUpdateNote }) => {
       .join(", ");
   };
 
-  // Render note input with inline edit
-  const renderNoteCell = (order) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [noteText, setNoteText] = useState(order.note || "");
-
-    const handleSaveNote = () => {
-      onUpdateNote(order.id, noteText);
-      setIsEditing(false);
-    };
-
-    if (isEditing) {
-      return (
-        <div className="flex items-center">
-          <input
-            type="text"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            className="border p-1 w-full rounded text-sm"
-            autoFocus
-            onBlur={handleSaveNote}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSaveNote();
-              if (e.key === "Escape") setIsEditing(false);
-            }}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className="cursor-pointer hover:bg-gray-100 p-1 rounded flex items-center"
-        onClick={() => setIsEditing(true)}
-      >
-        <FileText size={16} className="mr-1 text-gray-400" />
-        <span className="truncate">{order.note || "คลิกเพื่อเพิ่มบันทึก"}</span>
-      </div>
-    );
-  };
+  // Ensure orders is always an array
+  const safeOrders = Array.isArray(orders) ? orders : [];
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
@@ -204,7 +213,7 @@ const OrderTable = ({ orders, onViewDetails, onUpdateNote }) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {orders.length === 0 ? (
+          {safeOrders.length === 0 ? (
             <tr>
               <td
                 colSpan="11"
@@ -214,7 +223,7 @@ const OrderTable = ({ orders, onViewDetails, onUpdateNote }) => {
               </td>
             </tr>
           ) : (
-            orders.map((order) => (
+            safeOrders.map((order) => (
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                   {order.reference_id || `#${order.id}`}
@@ -243,7 +252,7 @@ const OrderTable = ({ orders, onViewDetails, onUpdateNote }) => {
                   {getDateRangeDisplay(order)}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500 max-w-xs">
-                  {renderNoteCell(order)}
+                  <NoteCell order={order} onUpdateNote={onUpdateNote} />
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                   {order.completed ? (
