@@ -42,7 +42,14 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       places.find((p) => p.phone)
     );
   }
-  // ฟังก์ชันใหม่สำหรับดึงข้อมูล Agent จากการ join
+
+  // ฟังก์ชันป้องกันการ wrap ข้อความตอนแคปภาพ
+  const preventTextWrap = (text) => {
+    if (!text || typeof text !== "string" || text.length < 3) return text;
+    return text.replace(/\s+/g, "\u00A0");
+  };
+
+  // ฟังก์ชันสำหรับดึงข้อมูล Agent จากการ join
   const getAgentInfo = (booking) => {
     if (!booking) {
       console.warn(`Booking is undefined or null`);
@@ -54,7 +61,6 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       return { name: "ไม่ระบุ Agent", phone: "" };
     }
 
-    // ลองใช้ข้อมูลจาก join ก่อน (agent_info)
     if (booking.orders.agent_info) {
       console.log(
         `Using agent_info for booking ID: ${booking.id}`,
@@ -66,7 +72,6 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       };
     }
 
-    // fallback ไปใช้ agent_name ถ้า join ไม่สำเร็จ
     if (booking.orders.agent_name) {
       console.log(
         `Using agent_name fallback for booking ID: ${booking.id}`,
@@ -95,16 +100,13 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       return { name: "ไม่มีข้อมูล", phone: "" };
     }
 
-    // เลือก recipients ตาม booking type
     const recipients =
       bookingType === "tour" ? tourRecipients : transferRecipients;
     console.log(`🔍 Using ${bookingType} recipients:`, recipients);
 
-    // ค้นหาแบบ exact match ก่อน
     const exactMatch = recipients.find((r) => r.value === placeName);
     console.log("🔍 Exact match result:", exactMatch);
 
-    // ค้นหาแบบ case insensitive
     const caseInsensitiveMatch = recipients.find(
       (r) =>
         r.value &&
@@ -155,7 +157,9 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
     return (
       <div className="text-center py-4">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-gray-300 border-r-blue-500"></div>
-        <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+        <p className="mt-2 text-gray-600">
+          {preventTextWrap("กำลังโหลดข้อมูล...")}
+        </p>
       </div>
     );
   }
@@ -163,7 +167,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-300 text-red-700 p-3 rounded">
-        <p>{error}</p>
+        <p>{preventTextWrap(error)}</p>
       </div>
     );
   }
@@ -171,7 +175,9 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   if (bookings.length === 0) {
     return (
       <div className="text-center py-6 text-gray-500">
-        ไม่พบข้อมูลการจอง{type === "tour" ? "Tour" : "Transfer"}
+        {preventTextWrap(
+          `ไม่พบข้อมูลการจอง${type === "tour" ? "Tour" : "Transfer"}`
+        )}
       </div>
     );
   }
@@ -213,7 +219,6 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   const formatPax = (booking) => {
     if (!booking) return "0";
 
-    // ลองใช้ข้อมูลจาก booking.orders ก่อน
     if (booking.orders) {
       const adtCount = parseInt(booking.orders.pax_adt || 0);
       const chdCount = parseInt(booking.orders.pax_chd || 0);
@@ -229,7 +234,6 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       }
     }
 
-    // ถ้าไม่มีข้อมูลจาก orders ให้ลองจาก booking เอง
     const adtCount = parseInt(booking.pax_adt || 0);
     const chdCount = parseInt(booking.pax_chd || 0);
     const infCount = parseInt(booking.pax_inf || 0);
@@ -243,7 +247,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   };
 
   return (
-    <div className="relative space-y-3 font-Prompt">
+    <div className="relative space-y-3 font-prompt">
       {sortedBookings.map((booking, index) => {
         const firstName = booking.orders?.first_name || "";
         const lastName = booking.orders?.last_name || "";
@@ -279,6 +283,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                   styles: {
                     fontFamily: "'Prompt', sans-serif",
                   },
+                  width: 1000, // กำหนดความกว้างตอนแคป
                 }}
                 context="bookingList"
               />
@@ -309,10 +314,10 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
               <div className="p-3">
                 <div className="flex justify-between items-start mb-2">
                   <div className="font-medium text-lg flex items-center gap-1">
-                    {index + 1}.
+                    {preventTextWrap(`${index + 1}.`)}
                     <User size={18} className="text-gray-500" />
-                    <span>
-                      {customerName} | {formatPax(booking)} คน
+                    <span className="flex items-center w-full mr-2  0">
+                      {preventTextWrap(customerName)} | {formatPax(booking)} คน
                     </span>
                   </div>
                 </div>
@@ -326,9 +331,11 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                   >
                     <Clock size={16} className="mr-1" />
                     <span className="whitespace-nowrap">
-                      {type === "tour"
-                        ? booking.tour_pickup_time || "-"
-                        : booking.transfer_time || "-"}
+                      {preventTextWrap(
+                        type === "tour"
+                          ? booking.tour_pickup_time || "-"
+                          : booking.transfer_time || "-"
+                      )}
                     </span>
                   </span>
                   <span
@@ -339,9 +346,11 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                     }`}
                   >
                     <CalendarCheck size={16} className="mr-1" />
-                    {type === "tour"
-                      ? format(new Date(booking.tour_date), "dd/MM/yyyy")
-                      : format(new Date(booking.transfer_date), "dd/MM/yyyy")}
+                    {preventTextWrap(
+                      type === "tour"
+                        ? format(new Date(booking.tour_date), "dd/MM/yyyy")
+                        : format(new Date(booking.transfer_date), "dd/MM/yyyy")
+                    )}
                   </span>
                 </div>
                 <div className="text-sm text-gray-700">
@@ -352,7 +361,8 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center mr-2">
                             <Hotel size={16} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>โรงแรม:</b> {booking.tour_hotel || "-"}
+                              <b>{preventTextWrap("โรงแรม:")}</b>{" "}
+                              {preventTextWrap(booking.tour_hotel || "-")}
                             </span>
                           </div>
                           {booking.tour_room_no && (
@@ -362,7 +372,8 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                                 className="mr-1 flex-shrink-0"
                               />
                               <span>
-                                <b>ห้อง:</b> {booking.tour_room_no}
+                                <b>{preventTextWrap("ห้อง:")}</b>{" "}
+                                {preventTextWrap(booking.tour_room_no)}
                               </span>
                             </div>
                           )}
@@ -371,9 +382,17 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                       <div className="flex flex-wrap gap-x-4 text-xs text-gray-600 mb-2">
                         <div className="flex items-center">
                           <FileText size={14} className="mr-1 flex-shrink-0" />
-                          <span className="w-xl">
-                            <b>รายละเอียด:</b> {booking.tour_detail || "-"}
-                          </span>
+                          <div
+                            className="w-xl text-balance"
+                            style={{
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              maxWidth: "500px",
+                            }}
+                          >
+                            <b>{preventTextWrap("รายละเอียด:")}</b>{" "}
+                            {booking.tour_detail || "-"}
+                          </div>
                         </div>
                       </div>
                     </>
@@ -384,13 +403,15 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center mr-2">
                             <MapPin size={14} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>รับจาก:</b> {booking.pickup_location || "-"}
+                              <b>{preventTextWrap("รับจาก:")}</b>{" "}
+                              {preventTextWrap(booking.pickup_location || "-")}
                             </span>
                           </div>
                           <div className="flex items-center">
                             <MapPin size={14} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>ส่งที่:</b> {booking.drop_location || "-"}
+                              <b>{preventTextWrap("ส่งที่:")}</b>{" "}
+                              {preventTextWrap(booking.drop_location || "-")}
                             </span>
                           </div>
                         </div>
@@ -400,7 +421,8 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center mr-2">
                             <Plane size={16} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>ไฟลต์:</b> {booking.transfer_flight}
+                              <b>{preventTextWrap("ไฟลต์:")}</b>{" "}
+                              {preventTextWrap(booking.transfer_flight)}
                             </span>
                           </div>
                         )}
@@ -408,7 +430,8 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center">
                             <Clock size={14} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>เวลาบิน:</b> {booking.transfer_ftime}
+                              <b>{preventTextWrap("เวลาบิน:")}</b>{" "}
+                              {preventTextWrap(booking.transfer_ftime)}
                             </span>
                           </div>
                         )}
@@ -416,8 +439,8 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                     </>
                   )}
                 </div>
-                <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t border-gray-500">
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                <div className="flex flex-wrap items-center text-xs text-gray-500 pt-2 border-t border-gray-500 gap-2">
+                  <div className="flex items-center gap-2 text-sm flex-1">
                     <span
                       className={`font-medium ${
                         agentInfo.name === "ไม่ระบุ Agent"
@@ -425,21 +448,33 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           : ""
                       }`}
                     >
-                      จาก: {formatWithPhone(agentInfo.name, agentInfo.phone)}
+                      {preventTextWrap(
+                        `จาก: ${formatWithPhone(
+                          agentInfo.name,
+                          agentInfo.phone
+                        )}`
+                      )}
                     </span>
-                    <span>|</span>
-                    <span className="font-medium">
-                      ส่ง: {formatWithPhone(sendToInfo.name, sendToInfo.phone)}
+                    <span>{preventTextWrap("|")}</span>
+                    <span className="font-medium text-balance w-full">
+                      {preventTextWrap(
+                        `ส่ง: ${formatWithPhone(
+                          sendToInfo.name,
+                          sendToInfo.phone
+                        )}`
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>
-                      {booking.reference_id
-                        ? booking.reference_id
-                        : `ID: ${booking.id || "-"}`}
+                      {preventTextWrap(
+                        booking.reference_id
+                          ? booking.reference_id
+                          : `ID: ${booking.id || "-"}`
+                      )}
                     </span>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      className={`px-2 py-1 rounded-full w-22 text-center text-xs font-medium ${getStatusColor(
                         booking.status
                       )}`}
                     >
