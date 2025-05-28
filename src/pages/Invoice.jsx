@@ -983,8 +983,8 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
      <div class="invoice-footer">
        <div>
          <p style="font-weight: bold; margin-bottom: 5px;">PAYMENT TO INDO Smile</p>
-         <p>KBank 255-2431-068</p>
-         <p>ACCT : INDO Smile CO., LTD.</p>
+         <p>KRUNGSRI 6641121789</p>
+         <p>ACCT : TAWEE WONGPIENKIT</p>
        </div>
        <div style="text-align: right;">
          <p style="font-weight: bold; font-size: 14px;">GRAND TOTAL: ${formatNumberWithCommas(
