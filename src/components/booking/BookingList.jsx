@@ -316,7 +316,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                   <div className="font-medium text-lg flex items-center gap-1">
                     {preventTextWrap(`${index + 1}.`)}
                     <User size={18} className="text-gray-500" />
-                    <span className="flex items-center w-full mr-2  0">
+                    <span className="flex items-center w-150 mr-2  0">
                       {preventTextWrap(customerName)} | {formatPax(booking)} คน
                     </span>
                   </div>

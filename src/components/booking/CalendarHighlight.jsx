@@ -24,20 +24,22 @@ const CalendarHighlight = ({ selectedDate, onDateSelect }) => {
     bothDates: new Set(),
   });
   const [isLoading, setIsLoading] = useState(false);
+
   // วันในสัปดาห์ภาษาไทย
   const weekDays = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
 
+  // แยก useEffect ออกเป็น 2 ส่วน
   useEffect(() => {
-    // อัพเดท currentMonth ถ้าจำเป็น
-    if (!isSameMonth(selectedDate, currentMonth)) {
-      setCurrentMonth(selectedDate);
-      return; // ออกจาก effect นี้ ให้รอ currentMonth เปลี่ยนแล้วค่อยทำงานใหม่
-    }
-
-    // ทำงานเมื่อ currentMonth พร้อมแล้ว
     generateCalendarDays(currentMonth);
     fetchBookedDates(currentMonth);
-  }, [selectedDate, currentMonth]);
+  }, [currentMonth]);
+
+  // อัพเดท currentMonth เมื่อ selectedDate เปลี่ยน
+  useEffect(() => {
+    if (!isSameMonth(selectedDate, currentMonth)) {
+      setCurrentMonth(selectedDate);
+    }
+  }, [selectedDate]);
 
   // สร้างวันที่ในปฏิทิน
   const generateCalendarDays = (date) => {
@@ -52,22 +54,23 @@ const CalendarHighlight = ({ selectedDate, onDateSelect }) => {
 
   // เลื่อนไปเดือนก่อนหน้า
   const prevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
+    setCurrentMonth((prevMonth) => subMonths(prevMonth, 1));
   };
 
   // เลื่อนไปเดือนถัดไป
   const nextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
+    setCurrentMonth((prevMonth) => addMonths(prevMonth, 1));
   };
 
   // ดึงข้อมูลวันที่มีการจอง
   const fetchBookedDates = async (date) => {
     setIsLoading(true);
-    const monthStr = format(date, "yyyy-MM");
-    const startDate = `${monthStr}-01`;
-    const endDate = format(endOfMonth(date), "yyyy-MM-dd");
 
     try {
+      const monthStr = format(date, "yyyy-MM");
+      const startDate = `${monthStr}-01`;
+      const endDate = format(endOfMonth(date), "yyyy-MM-dd");
+
       // ดึงข้อมูลทัวร์
       const { data: tourData, error: tourError } = await supabase
         .from("tour_bookings")
@@ -117,6 +120,11 @@ const CalendarHighlight = ({ selectedDate, onDateSelect }) => {
       });
     } catch (error) {
       console.error("Error fetching booked dates:", error);
+      setBookingData({
+        tourDates: new Set(),
+        transferDates: new Set(),
+        bothDates: new Set(),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -149,6 +157,7 @@ const CalendarHighlight = ({ selectedDate, onDateSelect }) => {
   const isCurrentMonth = (day) => {
     return isSameMonth(day, currentMonth);
   };
+
   const renderLegend = () => (
     <div className="px-4 py-2 text-xs text-gray-500 flex gap-4 justify-center border-b flex-wrap">
       <div className="flex items-center">
@@ -192,14 +201,14 @@ const CalendarHighlight = ({ selectedDate, onDateSelect }) => {
             bookingStyle = "bg-blue-200 text-blue-800 hover:bg-blue-200";
           } else if (bookingType === "both") {
             bookingStyle =
-              "bg-gradient-to-b from-green-300 to-blue-400  hover:from-green-700 hover:to-blue-700";
+              "bg-gradient-to-b from-green-300 to-blue-400 hover:from-green-700 hover:to-blue-700";
           }
         }
 
         return (
           <button
             key={i}
-            onClick={() => onDateSelect(day)}
+            onClick={() => inCurrentMonth && onDateSelect(day)}
             disabled={!inCurrentMonth}
             className={`
               h-10 w-full rounded-md flex items-center justify-center relative
@@ -265,6 +274,7 @@ const CalendarHighlight = ({ selectedDate, onDateSelect }) => {
       </div>
 
       {renderLegend()}
+
       {/* ตารางปฏิทิน */}
       <div className="p-4">
         {/* วันในสัปดาห์ */}
