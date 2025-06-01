@@ -15,7 +15,8 @@ import ViewOrders from "./pages/ViewOrders";
 import Payment from "./pages/Payment";
 import Invoice from "./pages/Invoice";
 import Voucher from "./pages/Voucher";
-import CreateVoucher from "./pages/CreateVoucher"; // เพิ่มการ import
+import CreateVoucher from "./pages/CreateVoucher";
+import Report from "./pages/Report";
 import Login from "./pages/Login";
 import UserManagement from "./pages/UserManagement";
 import ViewPayment from "./pages/ViewPayment";
@@ -54,6 +55,7 @@ const App = () => {
                     <Route path="/information" element={<Information />} />
                     <Route path="/view-payment" element={<ViewPayment />} />
                     <Route path="/voucher" element={<Voucher />} />
+                    <Route path="/report" element={<Report />} />
                     {/* เพิ่มเส้นทางไปยังหน้า CreateVoucher */}
                     <Route
                       path="/create-voucher/:bookingType/:bookingId"

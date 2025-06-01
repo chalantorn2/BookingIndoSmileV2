@@ -1,0 +1,1111 @@
+import React, { useState, useEffect } from "react";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { th } from "date-fns/locale";
+import {
+  Download,
+  RefreshCcw,
+  Calendar,
+  CheckSquare,
+  Square,
+  FileSpreadsheet,
+} from "lucide-react";
+import { useInformation } from "../contexts/InformationContext";
+import { useNotification } from "../hooks/useNotification";
+import AutocompleteInput from "../components/common/AutocompleteInput";
+import { exportReportToExcel } from "../services/reportService";
+import supabase from "../config/supabaseClient";
+
+const Report = () => {
+  const { showSuccess, showError, showInfo } = useNotification();
+  const { agents, tourRecipients, transferRecipients } = useInformation();
+
+  // Filter states
+  const [selectedMonth, setSelectedMonth] = useState(
+    format(new Date(), "yyyy-MM")
+  );
+
+  // Filter type selection (radio button)
+  const [filterType, setFilterType] = useState("agent"); // 'agent', 'tour_recipient', 'transfer_recipient'
+  const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedTourRecipient, setSelectedTourRecipient] = useState("");
+  const [selectedTransferRecipient, setSelectedTransferRecipient] =
+    useState("");
+
+  // Export states
+  const [exportRange, setExportRange] = useState("full_month");
+  const [exportFormat, setExportFormat] = useState("combined"); // 'combined' or 'separate'
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Data states
+  const [tourBookings, setTourBookings] = useState([]);
+  const [transferBookings, setTransferBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Selection states
+  const [selectedTourIds, setSelectedTourIds] = useState(new Set());
+  const [selectedTransferIds, setSelectedTransferIds] = useState(new Set());
+  const [selectAllTour, setSelectAllTour] = useState(false);
+  const [selectAllTransfer, setSelectAllTransfer] = useState(false);
+
+  // Load data when filters change
+  useEffect(() => {
+    // Only fetch when a filter value is selected
+    if (
+      (filterType === "agent" && selectedAgent) ||
+      (filterType === "tour_recipient" && selectedTourRecipient) ||
+      (filterType === "transfer_recipient" && selectedTransferRecipient)
+    ) {
+      fetchReportData();
+    } else {
+      // Clear data when no filter is selected
+      setTourBookings([]);
+      setTransferBookings([]);
+      setSelectedTourIds(new Set());
+      setSelectedTransferIds(new Set());
+    }
+  }, [
+    selectedMonth,
+    selectedAgent,
+    selectedTourRecipient,
+    selectedTransferRecipient,
+    filterType,
+  ]);
+
+  // Update select all checkboxes
+  useEffect(() => {
+    setSelectAllTour(
+      tourBookings.length > 0 && selectedTourIds.size === tourBookings.length
+    );
+  }, [selectedTourIds, tourBookings]);
+
+  useEffect(() => {
+    setSelectAllTransfer(
+      transferBookings.length > 0 &&
+        selectedTransferIds.size === transferBookings.length
+    );
+  }, [selectedTransferIds, transferBookings]);
+
+  const fetchReportData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const startDate = format(
+        startOfMonth(new Date(selectedMonth)),
+        "yyyy-MM-dd"
+      );
+      const endDate = format(endOfMonth(new Date(selectedMonth)), "yyyy-MM-dd");
+
+      // Build query conditions based on filter type
+      let tourQuery = supabase
+        .from("tour_bookings")
+        .select(
+          `
+          *,
+          orders (
+            first_name,
+            last_name,
+            agent_name,
+            reference_id,
+            pax_adt,
+            pax_chd,
+            pax_inf
+          )
+        `
+        )
+        .gte("tour_date", startDate)
+        .lte("tour_date", endDate)
+        .order("tour_date", { ascending: true });
+
+      let transferQuery = supabase
+        .from("transfer_bookings")
+        .select(
+          `
+          *,
+          orders (
+            first_name,
+            last_name,
+            agent_name,
+            reference_id,
+            pax_adt,
+            pax_chd,
+            pax_inf
+          )
+        `
+        )
+        .gte("transfer_date", startDate)
+        .lte("transfer_date", endDate)
+        .order("transfer_date", { ascending: true });
+
+      // Apply filters based on selected filter type
+      if (filterType === "agent" && selectedAgent) {
+        // Filter by joining with orders table
+        const { data: tourData, error: tourError } = await supabase
+          .from("tour_bookings")
+          .select(
+            `
+            *,
+            orders!inner (
+              first_name,
+              last_name,
+              agent_name,
+              reference_id,
+              pax_adt,
+              pax_chd,
+              pax_inf
+            )
+          `
+          )
+          .gte("tour_date", startDate)
+          .lte("tour_date", endDate)
+          .eq("orders.agent_name", selectedAgent)
+          .order("tour_date", { ascending: true });
+
+        const { data: transferData, error: transferError } = await supabase
+          .from("transfer_bookings")
+          .select(
+            `
+            *,
+            orders!inner (
+              first_name,
+              last_name,
+              agent_name,
+              reference_id,
+              pax_adt,
+              pax_chd,
+              pax_inf
+            )
+          `
+          )
+          .gte("transfer_date", startDate)
+          .lte("transfer_date", endDate)
+          .eq("orders.agent_name", selectedAgent)
+          .order("transfer_date", { ascending: true });
+
+        if (tourError) throw tourError;
+        if (transferError) throw transferError;
+
+        setTourBookings(tourData || []);
+        setTransferBookings(transferData || []);
+      } else if (filterType === "tour_recipient" && selectedTourRecipient) {
+        // Filter only tour bookings by recipient
+        const { data: tourData, error: tourError } = await tourQuery.eq(
+          "send_to",
+          selectedTourRecipient
+        );
+
+        if (tourError) throw tourError;
+
+        setTourBookings(tourData || []);
+        setTransferBookings([]); // Clear transfer bookings
+      } else if (
+        filterType === "transfer_recipient" &&
+        selectedTransferRecipient
+      ) {
+        // Filter only transfer bookings by recipient
+        const { data: transferData, error: transferError } =
+          await transferQuery.eq("send_to", selectedTransferRecipient);
+
+        if (transferError) throw transferError;
+
+        setTourBookings([]); // Clear tour bookings
+        setTransferBookings(transferData || []);
+      }
+
+      // Reset selections
+      setSelectedTourIds(new Set());
+      setSelectedTransferIds(new Set());
+    } catch (err) {
+      console.error("Error fetching report data:", err);
+      setError("ไม่สามารถโหลดข้อมูลได้");
+      setTourBookings([]);
+      setTransferBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterTypeChange = (newFilterType) => {
+    setFilterType(newFilterType);
+    // Don't reset other values immediately, only when new selection is made
+  };
+
+  const handleAgentChange = (value) => {
+    // Reset other filters when selecting agent
+    setSelectedTourRecipient("");
+    setSelectedTransferRecipient("");
+    setSelectedAgent(value);
+  };
+
+  const handleTourRecipientChange = (value) => {
+    // Reset other filters when selecting tour recipient
+    setSelectedAgent("");
+    setSelectedTransferRecipient("");
+    setSelectedTourRecipient(value);
+  };
+
+  const handleTransferRecipientChange = (value) => {
+    // Reset other filters when selecting transfer recipient
+    setSelectedAgent("");
+    setSelectedTourRecipient("");
+    setSelectedTransferRecipient(value);
+  };
+
+  const handleReset = () => {
+    setSelectedMonth(format(new Date(), "yyyy-MM"));
+    setFilterType("agent");
+    setSelectedAgent("");
+    setSelectedTourRecipient("");
+    setSelectedTransferRecipient("");
+    setSelectedTourIds(new Set());
+    setSelectedTransferIds(new Set());
+    setExportRange("full_month");
+    setExportFormat("combined");
+  };
+
+  const handleTourSelectAll = (checked) => {
+    if (checked) {
+      setSelectedTourIds(new Set(tourBookings.map((b) => b.id)));
+    } else {
+      setSelectedTourIds(new Set());
+    }
+  };
+
+  const handleTransferSelectAll = (checked) => {
+    if (checked) {
+      setSelectedTransferIds(new Set(transferBookings.map((b) => b.id)));
+    } else {
+      setSelectedTransferIds(new Set());
+    }
+  };
+
+  const handleTourSelect = (id, checked) => {
+    const newSelected = new Set(selectedTourIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedTourIds(newSelected);
+  };
+
+  const handleTransferSelect = (id, checked) => {
+    const newSelected = new Set(selectedTransferIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedTransferIds(newSelected);
+  };
+
+  const formatPax = (booking) => {
+    if (booking.orders) {
+      const adt = parseInt(booking.orders.pax_adt) || 0;
+      const chd = parseInt(booking.orders.pax_chd) || 0;
+      const inf = parseInt(booking.orders.pax_inf) || 0;
+
+      let paxParts = [];
+      if (adt > 0) paxParts.push(adt.toString());
+      if (chd > 0) paxParts.push(chd.toString());
+      if (inf > 0) paxParts.push(inf.toString());
+
+      return paxParts.length > 0 ? paxParts.join("+") : "0";
+    }
+    return booking.pax || "0";
+  };
+
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return "-";
+    try {
+      return format(new Date(dateStr), "dd/MM/yyyy");
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    if (!amount) return "0";
+    return parseFloat(amount).toLocaleString();
+  };
+
+  const calculateProfit = (booking) => {
+    const cost = parseFloat(booking.cost_price) || 0;
+    const sell = parseFloat(booking.selling_price) || 0;
+    return sell - cost;
+  };
+
+  // เพิ่ม state สำหรับคอลัมน์ที่แสดง
+  const [visibleColumns, setVisibleColumns] = useState({
+    Date: true,
+    Agent: true,
+    ReferenceID: false,
+    CustomerName: true,
+    Pax: true,
+    PickupTime: false,
+    HotelOrPickup: false,
+    DetailsOrDropoff: false,
+    Flight: false,
+    FlightTime: false,
+    SendTo: false,
+    Note: false,
+    Cost: true,
+    Sell: true,
+    Profit: true,
+  });
+
+  // ฟังก์ชันจัดการการเปลี่ยนแปลง checkbox
+  const handleColumnToggle = (column) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [column]: !prev[column],
+    }));
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    showInfo("กำลังสร้างไฟล์ Excel กรุณารอสักครู่...");
+
+    try {
+      // Determine which bookings to export
+      const selectedTours =
+        selectedTourIds.size > 0
+          ? tourBookings.filter((b) => selectedTourIds.has(b.id))
+          : tourBookings;
+
+      const selectedTransfers =
+        selectedTransferIds.size > 0
+          ? transferBookings.filter((b) => selectedTransferIds.has(b.id))
+          : transferBookings;
+
+      if (selectedTours.length === 0 && selectedTransfers.length === 0) {
+        showError("ไม่มีข้อมูลสำหรับ Export");
+        return;
+      }
+
+      // ปรับการเรียก exportReportToExcel ให้ส่งพารามิเตอร์ใหม่
+      const result = await exportReportToExcel(
+        selectedTours,
+        selectedTransfers,
+        selectedMonth,
+        exportRange,
+        exportFormat,
+        filterType,
+        selectedTourRecipient,
+        selectedTransferRecipient
+      );
+
+      if (result.success) {
+        showSuccess(result.message);
+      } else {
+        showError(result.message);
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      showError("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
+    } finally {
+      setIsExporting(false); // แก้ typo จาก setIsTrue เป็น setIsExporting
+    }
+  };
+  const fetchAllDataForMonth = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const startDate = format(
+        startOfMonth(new Date(selectedMonth)),
+        "yyyy-MM-dd"
+      );
+      const endDate = format(endOfMonth(new Date(selectedMonth)), "yyyy-MM-dd");
+
+      // ดึงข้อมูลทั้งหมดไม่มีเงื่อนไข
+      const { data: tourData, error: tourError } = await supabase
+        .from("tour_bookings")
+        .select(
+          `
+        *,
+        orders (
+          first_name,
+          last_name,
+          agent_name,
+          reference_id,
+          pax_adt,
+          pax_chd,
+          pax_inf
+        )
+      `
+        )
+        .gte("tour_date", startDate)
+        .lte("tour_date", endDate)
+        .order("tour_date", { ascending: true });
+
+      const { data: transferData, error: transferError } = await supabase
+        .from("transfer_bookings")
+        .select(
+          `
+        *,
+        orders (
+          first_name,
+          last_name,
+          agent_name,
+          reference_id,
+          pax_adt,
+          pax_chd,
+          pax_inf
+        )
+      `
+        )
+        .gte("transfer_date", startDate)
+        .lte("transfer_date", endDate)
+        .order("transfer_date", { ascending: true });
+
+      if (tourError) throw tourError;
+      if (transferError) throw transferError;
+
+      setTourBookings(tourData || []);
+      setTransferBookings(transferData || []);
+
+      // Reset selections
+      setSelectedTourIds(new Set());
+      setSelectedTransferIds(new Set());
+
+      showSuccess(
+        `แสดงข้อมูลทั้งหมดในเดือน ${format(
+          new Date(selectedMonth),
+          "MMMM yyyy",
+          { locale: th }
+        )}`
+      );
+    } catch (err) {
+      console.error("Error fetching all data:", err);
+      setError("ไม่สามารถโหลดข้อมูลได้");
+      setTourBookings([]);
+      setTransferBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderTourTable = () => {
+    if (tourBookings.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          ไม่มีข้อมูล Tour ในช่วงเวลาที่เลือก
+        </div>
+      );
+    }
+
+    const columns = [
+      { key: "Date", label: "วันที่" },
+      { key: "Agent", label: "Agent" },
+      { key: "ReferenceID", label: "Reference ID" },
+      { key: "CustomerName", label: "ชื่อลูกค้า" },
+      { key: "Pax", label: "จำนวนคน" },
+      { key: "PickupTime", label: "เวลารับ" },
+      { key: "HotelOrPickup", label: "โรงแรม" },
+      { key: "DetailsOrDropoff", label: "รายละเอียด" },
+      { key: "SendTo", label: "ส่ง" },
+      { key: "Note", label: "หมายเหตุ" },
+      { key: "Cost", label: "Cost" },
+      { key: "Sell", label: "Sell" },
+      { key: "Profit", label: "Profit" },
+    ].filter((col) => visibleColumns[col.key]);
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-green-50">
+            <tr>
+              <th className="px-4 py-3 text-center">
+                <button
+                  onClick={() => handleTourSelectAll(!selectAllTour)}
+                  className="text-green-600 hover:text-green-800"
+                >
+                  {selectAllTour ? (
+                    <CheckSquare size={18} />
+                  ) : (
+                    <Square size={18} />
+                  )}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                ลำดับ
+              </th>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase ${
+                    ["Cost", "Sell", "Profit"].includes(col.key)
+                      ? "text-right"
+                      : ""
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {tourBookings.map((booking, index) => (
+              <tr key={booking.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() =>
+                      handleTourSelect(
+                        booking.id,
+                        !selectedTourIds.has(booking.id)
+                      )
+                    }
+                    className="text-green-600 hover:text-green-800"
+                  >
+                    {selectedTourIds.has(booking.id) ? (
+                      <CheckSquare size={18} />
+                    ) : (
+                      <Square size={18} />
+                    )}
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-sm">{index + 1}</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`px-4 py-3 text-sm ${
+                      ["Cost", "Sell", "Profit"].includes(col.key)
+                        ? "text-right"
+                        : ""
+                    } ${
+                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                        ? "max-w-xs truncate"
+                        : ""
+                    }`}
+                    title={
+                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                        ? booking[
+                            col.key === "DetailsOrDropoff"
+                              ? "tour_detail"
+                              : "note"
+                          ]
+                        : undefined
+                    }
+                  >
+                    {col.key === "Date"
+                      ? formatDateDisplay(booking.tour_date)
+                      : col.key === "Agent"
+                      ? booking.orders?.agent_name || "-"
+                      : col.key === "ReferenceID"
+                      ? booking.orders?.reference_id || "-"
+                      : col.key === "CustomerName"
+                      ? booking.orders
+                        ? `${booking.orders.first_name || ""} ${
+                            booking.orders.last_name || ""
+                          }`.trim() || "-"
+                        : "-"
+                      : col.key === "Pax"
+                      ? formatPax(booking)
+                      : col.key === "PickupTime"
+                      ? booking.tour_pickup_time || "-"
+                      : col.key === "HotelOrPickup"
+                      ? booking.tour_hotel || "-"
+                      : col.key === "DetailsOrDropoff"
+                      ? booking.tour_detail || "-"
+                      : col.key === "SendTo"
+                      ? booking.send_to || "-"
+                      : col.key === "Note"
+                      ? booking.note || "-"
+                      : col.key === "Cost"
+                      ? formatCurrency(booking.cost_price)
+                      : col.key === "Sell"
+                      ? formatCurrency(booking.selling_price)
+                      : col.key === "Profit"
+                      ? formatCurrency(calculateProfit(booking))
+                      : ""}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderTransferTable = () => {
+    if (transferBookings.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          ไม่มีข้อมูล Transfer ในช่วงเวลาที่เลือก
+        </div>
+      );
+    }
+
+    const columns = [
+      { key: "Date", label: "วันที่" },
+      { key: "Agent", label: "Agent" },
+      { key: "ReferenceID", label: "Reference ID" },
+      { key: "CustomerName", label: "ชื่อลูกค้า" },
+      { key: "Pax", label: "จำนวนคน" },
+      { key: "PickupTime", label: "เวลารับ" },
+      { key: "HotelOrPickup", label: "รับจาก" },
+      { key: "DetailsOrDropoff", label: "ส่งที่" },
+      { key: "Flight", label: "เที่ยวบิน" },
+      { key: "FlightTime", label: "เวลาบิน" },
+      { key: "SendTo", label: "ส่ง" },
+      { key: "Note", label: "หมายเหตุ" },
+      { key: "Cost", label: "Cost" },
+      { key: "Sell", label: "Sell" },
+      { key: "Profit", label: "Profit" },
+    ].filter((col) => visibleColumns[col.key]);
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-blue-50">
+            <tr>
+              <th className="px-4 py-3 text-center">
+                <button
+                  onClick={() => handleTransferSelectAll(!selectAllTransfer)}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  {selectAllTransfer ? (
+                    <CheckSquare size={18} />
+                  ) : (
+                    <Square size={18} />
+                  )}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                ลำดับ
+              </th>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase ${
+                    ["Cost", "Sell", "Profit"].includes(col.key)
+                      ? "text-right"
+                      : ""
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {transferBookings.map((booking, index) => (
+              <tr key={booking.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() =>
+                      handleTransferSelect(
+                        booking.id,
+                        !selectedTransferIds.has(booking.id)
+                      )
+                    }
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    {selectedTransferIds.has(booking.id) ? (
+                      <CheckSquare size={18} />
+                    ) : (
+                      <Square size={18} />
+                    )}
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-sm">{index + 1}</td>
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`px-4 py-3 text-sm ${
+                      ["Cost", "Sell", "Profit"].includes(col.key)
+                        ? "text-right"
+                        : ""
+                    } ${
+                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                        ? "max-w-xs truncate"
+                        : ""
+                    }`}
+                    title={
+                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                        ? booking[
+                            col.key === "DetailsOrDropoff"
+                              ? "drop_location"
+                              : "note"
+                          ]
+                        : undefined
+                    }
+                  >
+                    {col.key === "Date"
+                      ? formatDateDisplay(booking.transfer_date)
+                      : col.key === "Agent"
+                      ? booking.orders?.agent_name || "-"
+                      : col.key === "ReferenceID"
+                      ? booking.orders?.reference_id || "-"
+                      : col.key === "CustomerName"
+                      ? booking.orders
+                        ? `${booking.orders.first_name || ""} ${
+                            booking.orders.last_name || ""
+                          }`.trim() || "-"
+                        : "-"
+                      : col.key === "Pax"
+                      ? formatPax(booking)
+                      : col.key === "PickupTime"
+                      ? booking.transfer_time || "-"
+                      : col.key === "HotelOrPickup"
+                      ? booking.pickup_location || "-"
+                      : col.key === "DetailsOrDropoff"
+                      ? booking.drop_location || "-"
+                      : col.key === "Flight"
+                      ? booking.transfer_flight || "-"
+                      : col.key === "FlightTime"
+                      ? booking.transfer_ftime || "-"
+                      : col.key === "SendTo"
+                      ? booking.send_to || "-"
+                      : col.key === "Note"
+                      ? booking.note || "-"
+                      : col.key === "Cost"
+                      ? formatCurrency(booking.cost_price)
+                      : col.key === "Sell"
+                      ? formatCurrency(booking.selling_price)
+                      : col.key === "Profit"
+                      ? formatCurrency(calculateProfit(booking))
+                      : ""}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-6 bg-gray-50 min-h-screen">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">รายงาน</h1>
+        <p className="text-gray-600">สร้างรายงานและ Export ข้อมูล Bookings</p>
+      </div>
+
+      {/* Filter Section */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 className="text-lg font-semibold mb-4">ตัวกรองข้อมูล</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          {/* Month Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              เดือน/ปี
+            </label>
+            <div className="relative">
+              <Calendar
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="pl-10 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Agent Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <input
+                type="radio"
+                name="filterType"
+                value="agent"
+                checked={filterType === "agent"}
+                onChange={(e) => handleFilterTypeChange(e.target.value)}
+                className="mr-2"
+              />
+              Agent
+            </label>
+            <AutocompleteInput
+              options={agents}
+              value={selectedAgent}
+              onChange={handleAgentChange}
+              placeholder="เลือก Agent"
+              className={`h-12 ${
+                filterType !== "agent" ? "pointer-events-none opacity-50" : ""
+              }`}
+              disabled={filterType !== "agent"}
+            />
+          </div>
+
+          {/* Tour Recipient Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <input
+                type="radio"
+                name="filterType"
+                value="tour_recipient"
+                checked={filterType === "tour_recipient"}
+                onChange={(e) => handleFilterTypeChange(e.target.value)}
+                className="mr-2"
+              />
+              ส่งใคร (Tour)
+            </label>
+            <AutocompleteInput
+              options={tourRecipients}
+              value={selectedTourRecipient}
+              onChange={handleTourRecipientChange}
+              placeholder="เลือกผู้รับ Tour"
+              className={`h-12 ${
+                filterType !== "tour_recipient"
+                  ? "pointer-events-none opacity-50"
+                  : ""
+              }`}
+              disabled={filterType !== "tour_recipient"}
+            />
+          </div>
+
+          {/* Transfer Recipient Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <input
+                type="radio"
+                name="filterType"
+                value="transfer_recipient"
+                checked={filterType === "transfer_recipient"}
+                onChange={(e) => handleFilterTypeChange(e.target.value)}
+                className="mr-2"
+              />
+              ส่งใคร (Transfer)
+            </label>
+            <AutocompleteInput
+              options={transferRecipients}
+              value={selectedTransferRecipient}
+              onChange={handleTransferRecipientChange}
+              placeholder="เลือกผู้รับ Transfer"
+              className={`h-12 ${
+                filterType !== "transfer_recipient"
+                  ? "pointer-events-none opacity-50"
+                  : ""
+              }`}
+              disabled={filterType !== "transfer_recipient"}
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReset}
+              className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              <RefreshCcw size={18} className="mr-2" />
+              Reset
+            </button>
+            <button
+              onClick={fetchAllDataForMonth}
+              disabled={loading}
+              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Calendar size={18} className="mr-2" />
+              แสดงทั้งเดือน
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Export Format Dropdown */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                รูปแบบ Excel:
+              </label>
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="combined">รวม</option>
+                <option value="separate">แยก Tour/Transfer</option>
+              </select>
+            </div>
+
+            {/* Export Range Dropdown */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                ช่วงเวลา:
+              </label>
+              <select
+                value={exportRange}
+                onChange={(e) => setExportRange(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="first_15">15 วันแรก</option>
+                <option value="last_15">15 วันหลัง</option>
+                <option value="full_month">ทั้งเดือน</option>
+              </select>
+            </div>
+
+            {/* Export Button */}
+            <button
+              onClick={handleExport}
+              disabled={
+                isExporting ||
+                (tourBookings.length === 0 && transferBookings.length === 0)
+              }
+              className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isExporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  กำลัง Export...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet size={18} className="mr-2" />
+                  Export Excel
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Loading/Error States */}
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
+          <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-center">
+          {error}
+        </div>
+      ) : (
+        <>
+          {/* Summary */}
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-gray-800">Orders</h4>
+                <p className="text-2xl font-bold text-gray-600">
+                  {
+                    [
+                      ...new Set([
+                        ...tourBookings.map((b) => b.order_id),
+                        ...transferBookings.map((b) => b.order_id),
+                      ]),
+                    ].length
+                  }
+                </p>
+                <p className="text-sm text-gray-600">จำนวน Order ทั้งหมด</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-800">Tour</h4>
+                <p className="text-2xl font-bold text-green-600">
+                  {tourBookings.length}
+                </p>
+                <p className="text-sm text-gray-600">
+                  เลือกแล้ว: {selectedTourIds.size} รายการ
+                </p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-blue-800">
+                  Transfer
+                </h4>
+                <p className="text-2xl font-bold text-blue-600">
+                  {transferBookings.length}
+                </p>
+                <p className="text-sm text-gray-600">
+                  เลือกแล้ว: {selectedTransferIds.size} รายการ
+                </p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-purple-800">
+                  รวมทั้งหมด
+                </h4>
+                <p className="text-2xl font-bold text-purple-600">
+                  {tourBookings.length + transferBookings.length}
+                </p>
+                <p className="text-sm text-gray-600">
+                  เลือกแล้ว: {selectedTourIds.size + selectedTransferIds.size}{" "}
+                  รายการ
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+            <h3 className="text-lg font-semibold mb-2">
+              เลือกคอลัมน์ที่ต้องการแสดง
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-8 gap-2">
+              {Object.keys(visibleColumns).map((column) => (
+                <label key={column} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns[column]}
+                    onChange={() => handleColumnToggle(column)}
+                    className="form-checkbox h-4 w-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">
+                    {column === "HotelOrPickup"
+                      ? "โรงแรม/รับจาก"
+                      : column === "DetailsOrDropoff"
+                      ? "รายละเอียด/ส่งที่"
+                      : column === "CustomerName"
+                      ? "ชื่อลูกค้า"
+                      : column === "PickupTime"
+                      ? "เวลารับ"
+                      : column === "ReferenceID"
+                      ? "Reference ID"
+                      : column === "Pax"
+                      ? "จำนวนคน"
+                      : column === "SendTo"
+                      ? "ส่ง"
+                      : column === "FlightTime"
+                      ? "เวลาบิน"
+                      : column}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Tour Table */}
+          {tourBookings.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md mb-6">
+              <div className="bg-gradient-to-r from-green-600 to-green-500 text-white p-4 rounded-t-lg">
+                <h3 className="text-lg font-semibold">
+                  Tour Bookings ({tourBookings.length})
+                </h3>
+              </div>
+              <div className="p-4">{renderTourTable()}</div>
+            </div>
+          )}
+
+          {/* Transfer Table */}
+          {transferBookings.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4 rounded-t-lg">
+                <h3 className="text-lg font-semibold">
+                  Transfer Bookings ({transferBookings.length})
+                </h3>
+              </div>
+              <div className="p-4">{renderTransferTable()}</div>
+            </div>
+          )}
+
+          {/* No Data Message */}
+          {tourBookings.length === 0 && transferBookings.length === 0 && (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500">
+              {!selectedAgent &&
+              !selectedTourRecipient &&
+              !selectedTransferRecipient
+                ? "กรุณาเลือกตัวกรองเพื่อแสดงข้อมูล"
+                : "ไม่พบข้อมูลตามเงื่อนไขที่เลือก"}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Report;
