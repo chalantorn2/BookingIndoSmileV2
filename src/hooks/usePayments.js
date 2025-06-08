@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import supabase from "../config/supabaseClient";
 import { fetchPaymentByOrderId, savePayment } from "../services/paymentService";
 import { useAlertDialogContext } from "../contexts/AlertDialogContext";
+import { useNotification } from "./useNotification";
 
 /**
  * Custom hook for handling payment operations
  */
 const usePayments = () => {
   const showAlert = useAlertDialogContext();
+  const { showInfo } = useNotification();
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [tourBookings, setTourBookings] = useState([]);
   const [transferBookings, setTransferBookings] = useState([]);
@@ -183,21 +185,10 @@ const usePayments = () => {
   };
 
   const handlePaymentEdit = async (paymentData, existingPayment) => {
-    // ทุกครั้งที่มีการแก้ไข Payment ให้ invoiced เป็น false เสมอ
-    paymentData.invoiced = false;
-
-    // ถ้า Payment นี้เคยออก Invoice ไปแล้ว ให้แจ้งเตือนผู้ใช้
-    if (existingPayment && existingPayment.invoiced) {
-      // แจ้งเตือนผู้ใช้ว่าจะต้องออก Invoice ใหม่
-      showInfo("Payment นี้มีการแก้ไข จะต้องสร้าง Invoice ใหม่");
-    }
-
-    // ทำการบันทึกข้อมูลปกติ
+    // เมื่อแก้ไข Payment ไม่ต้องเปลี่ยน invoiced แล้ว
+    // แค่บันทึกข้อมูลปกติ
     return await savePayment(paymentData);
   };
-
-  // Save payment data
-  // ใน usePayments.js - ปรับปรุงฟังก์ชัน savePaymentData
 
   const savePaymentData = async (order) => {
     if (!order) {
@@ -242,7 +233,6 @@ const usePayments = () => {
         total_cost: totals.totalCost,
         total_selling_price: totals.totalSellingPrice,
         total_profit: totals.totalProfit,
-        invoiced: false, // ตั้งเป็น false ไว้ก่อน จะเปลี่ยนเป็น true หากเลือกคงค่าเดิม
       };
 
       // ดึงข้อมูล Payment เดิม (ถ้ามี) โดยตรงจาก supabase แทนที่จะใช้ข้อมูลเดิม
@@ -267,6 +257,41 @@ const usePayments = () => {
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ฟังก์ชันอัพเดท Invoice ที่เกี่ยวข้องเมื่อ Payment เปลี่ยน
+  const updateRelatedInvoices = async (paymentId) => {
+    try {
+      // Import ฟังก์ชันที่ต้องการ
+      const { findInvoicesByPaymentId, recalculateInvoiceTotals } =
+        await import("../services/invoiceService");
+
+      // หา Invoice ที่เกี่ยวข้องกับ Payment นี้
+      const { data: relatedInvoices, error } = await findInvoicesByPaymentId(
+        paymentId
+      );
+
+      if (error) {
+        console.error("Error finding related invoices:", error);
+        return;
+      }
+
+      // อัพเดท Invoice ทุกตัวที่เกี่ยวข้อง
+      for (const invoice of relatedInvoices) {
+        const { success, error: recalcError } = await recalculateInvoiceTotals(
+          invoice.id
+        );
+
+        if (!success) {
+          console.error(
+            `Error recalculating invoice ${invoice.id}:`,
+            recalcError
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error updating related invoices:", error);
     }
   };
 

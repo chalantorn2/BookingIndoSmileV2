@@ -15,6 +15,8 @@ import HeaderInvoice from "../components/invoice/HeaderInvoice";
 import InvoiceTable from "../components/invoice/InvoiceTable";
 import InvoiceFooter from "../components/invoice/InvoiceFooter";
 import SummarySection from "../components/invoice/SummarySection";
+import InvoiceStatusModal from "../components/invoice/InvoiceStatusModal";
+import ViewInvoicesModal from "../components/invoice/ViewInvoicesModal";
 import {
   X,
   CheckSquare,
@@ -27,6 +29,8 @@ import {
   ArrowUp,
   ArrowDown,
   Plus,
+  CheckCircle,
+  Search,
 } from "lucide-react";
 import { useAlertDialogContext } from "../contexts/AlertDialogContext";
 
@@ -37,6 +41,7 @@ const formatNumberWithCommas = (num) => {
 
 const Invoice = () => {
   const { showSuccess, showError, showInfo } = useNotification();
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const showAlert = useAlertDialogContext();
   const [allPaymentsData, setAllPaymentsData] = useState([]);
   const [selectedPaymentIds, setSelectedPaymentIds] = useState([]);
@@ -1101,8 +1106,41 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
     );
   };
 
-  // แสดง View Invoices Modal
   const ViewInvoicesModal = () => {
+    const [searchInvoiceQuery, setSearchInvoiceQuery] = useState("");
+    const [filteredInvoices, setFilteredInvoices] = useState([]);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+
+    // แสดง 3 รายการล่าสุดเมื่อไม่มีการค้นหา
+    const recentInvoices = invoicesList
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 3);
+
+    // จัดการการค้นหา
+    useEffect(() => {
+      if (searchInvoiceQuery.trim()) {
+        const filtered = invoicesList.filter(
+          (invoice) =>
+            (invoice.invoice_name || "")
+              .toLowerCase()
+              .includes(searchInvoiceQuery.toLowerCase()) ||
+            (invoice.invoice_date || "").includes(searchInvoiceQuery)
+        );
+        setFilteredInvoices(filtered);
+        setShowSearchResults(true);
+      } else {
+        setShowSearchResults(false);
+        setFilteredInvoices([]);
+      }
+    }, [searchInvoiceQuery, invoicesList]);
+
+    const displayInvoices = showSearchResults
+      ? filteredInvoices
+      : recentInvoices;
+    const displayTitle = showSearchResults
+      ? `ผลการค้นหา (${filteredInvoices.length} รายการ)`
+      : "Invoice ล่าสุด (3 รายการ)";
+
     if (!isViewModalOpen) return null;
 
     return (
@@ -1117,14 +1155,47 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
               <X size={20} />
             </button>
           </div>
+
+          {/* Search Input */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <input
+                type="text"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded"
+                placeholder="ค้นหาตามชื่อหรือวันที่..."
+                value={searchInvoiceQuery}
+                onChange={(e) => setSearchInvoiceQuery(e.target.value)}
+              />
+            </div>
+            {searchInvoiceQuery && (
+              <button
+                onClick={() => setSearchInvoiceQuery("")}
+                className="mt-2 text-xs text-blue-600 hover:text-blue-800"
+              >
+                ล้างการค้นหา
+              </button>
+            )}
+          </div>
+
+          {/* Invoice List */}
           <div className="max-h-60 overflow-y-auto mb-4">
-            {invoicesList.length === 0 ? (
+            <h6 className="text-sm font-medium text-gray-600 mb-2">
+              {displayTitle}
+            </h6>
+
+            {displayInvoices.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
-                ไม่พบข้อมูล Invoice
+                {showSearchResults
+                  ? "ไม่พบ Invoice ที่ตรงกับคำค้นหา"
+                  : "ไม่พบข้อมูล Invoice"}
               </div>
             ) : (
               <div className="space-y-2">
-                {invoicesList.map((invoice) => (
+                {displayInvoices.map((invoice) => (
                   <div
                     key={invoice.id}
                     onClick={() => handleViewSelectedInvoice(invoice.id)}
@@ -1137,13 +1208,42 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
                       <div className="text-sm text-gray-500">
                         {invoice.invoice_date || "ไม่มีวันที่"}
                       </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        ยอดรวม:{" "}
+                        {parseFloat(invoice.total_amount || 0).toLocaleString()}{" "}
+                        บาท
+                      </div>
                     </div>
-                    <Eye size={18} className="text-blue-500" />
+
+                    <div className="flex flex-col items-end space-y-1">
+                      <Eye size={18} className="text-blue-500" />
+
+                      {/* แสดงสถานะ */}
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          invoice.status
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {invoice.status ? "เรียบร้อย" : "ไม่เรียบร้อย"}
+                      </span>
+
+                      {/* แสดงจำนวนไฟล์แนบ */}
+                      {invoice.attachments &&
+                        invoice.attachments.length > 0 && (
+                          <span className="text-xs text-blue-600">
+                            {invoice.attachments.length} ไฟล์
+                          </span>
+                        )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Footer */}
           <div className="flex justify-end">
             <button
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -1432,6 +1532,16 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
         {/* Edit Invoice Modal */}
         <EditInvoiceModal />
 
+        {/* Invoice Status Modal */}
+        <InvoiceStatusModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          onInvoiceSelect={(invoice) => {
+            // จัดการเมื่อเลือก Invoice (ถ้าต้องการ)
+            console.log("Selected invoice:", invoice);
+          }}
+        />
+
         {/* Invoice Controls - ซ่อนเมื่อพิมพ์ */}
         <div className="print:hidden text-center mb-4 space-x-2">
           {isViewingExistingInvoice && (
@@ -1469,10 +1579,10 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
 
           <button
             className="inline-flex items-center px-3 py-2 rounded bg-indigo-500 text-white hover:bg-indigo-600 mr-2"
-            onClick={handleExportCsv}
+            onClick={() => setIsStatusModalOpen(true)}
           >
-            <Download size={16} className="mr-1" />
-            นำออกข้อมูล
+            <CheckCircle size={16} className="mr-1" />
+            เช็คสถานะ Invoice
           </button>
 
           <button

@@ -37,19 +37,12 @@ export const savePayment = async (paymentData) => {
 
     let result;
     if (existingPayment) {
-      // ถ้ามีการแก้ไข Payment ที่มี invoiced = true ให้ถามยืนยัน
-      if (existingPayment.invoiced) {
-        // ในโค้ดจริงควรให้ component ที่เรียกใช้จัดการการถามยืนยัน
-        // แต่ในที่นี้เราจะเปลี่ยนให้ invoiced = false เลย
-        // (component ที่เรียกใช้จะต้องจัดการถามยืนยันเอง)
-        paymentData.invoiced = false;
-      }
-
-      // Update existing payment
+      // Update existing payment - คงค่า invoiced เดิมไว้
       result = await supabase
         .from("payments")
         .update({
           ...paymentData,
+          invoiced: existingPayment.invoiced, // คงค่าเดิม
           updated_at: new Date().toISOString(),
         })
         .eq("id", existingPayment.id)
@@ -61,6 +54,7 @@ export const savePayment = async (paymentData) => {
         .from("payments")
         .insert({
           ...paymentData,
+          invoiced: false, // ตั้งค่าเริ่มต้นสำหรับ payment ใหม่
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
