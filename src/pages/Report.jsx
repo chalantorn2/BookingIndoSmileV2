@@ -11,29 +11,36 @@ import {
 } from "lucide-react";
 import { useInformation } from "../contexts/InformationContext";
 import { useNotification } from "../hooks/useNotification";
-import AutocompleteInput from "../components/common/AutocompleteInput";
+import FilterInputWithAdd from "../components/common/FilterInputWithAdd";
+import SelectedFiltersDisplay from "../components/common/SelectedFiltersDisplay";
 import { exportReportToExcel } from "../services/reportService";
 import supabase from "../config/supabaseClient";
 
 const Report = () => {
   const { showSuccess, showError, showInfo } = useNotification();
-  const { agents, tourRecipients, transferRecipients } = useInformation();
+  const { agents, tourRecipients, transferRecipients, addInformation } =
+    useInformation();
 
-  // Filter states
+  // Filter states - เปลี่ยนเป็น arrays
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
   );
 
-  // Filter type selection (radio button)
-  const [filterType, setFilterType] = useState("agent"); // 'agent', 'tour_recipient', 'transfer_recipient'
-  const [selectedAgent, setSelectedAgent] = useState("");
-  const [selectedTourRecipient, setSelectedTourRecipient] = useState("");
-  const [selectedTransferRecipient, setSelectedTransferRecipient] =
-    useState("");
+  // Multiple filter selections
+  const [selectedAgents, setSelectedAgents] = useState([]);
+  const [selectedTourRecipients, setSelectedTourRecipients] = useState([]);
+  const [selectedTransferRecipients, setSelectedTransferRecipients] = useState(
+    []
+  );
+
+  // Current input values for each filter
+  const [currentAgentValue, setCurrentAgentValue] = useState("");
+  const [currentTourValue, setCurrentTourValue] = useState("");
+  const [currentTransferValue, setCurrentTransferValue] = useState("");
 
   // Export states
   const [exportRange, setExportRange] = useState("full_month");
-  const [exportFormat, setExportFormat] = useState("combined"); // 'combined' or 'separate'
+  const [exportFormat, setExportFormat] = useState("combined");
   const [isExporting, setIsExporting] = useState(false);
 
   // Data states
@@ -50,12 +57,12 @@ const Report = () => {
 
   // Load data when filters change
   useEffect(() => {
-    // Only fetch when a filter value is selected
-    if (
-      (filterType === "agent" && selectedAgent) ||
-      (filterType === "tour_recipient" && selectedTourRecipient) ||
-      (filterType === "transfer_recipient" && selectedTransferRecipient)
-    ) {
+    const hasFilters =
+      selectedAgents.length > 0 ||
+      selectedTourRecipients.length > 0 ||
+      selectedTransferRecipients.length > 0;
+
+    if (hasFilters) {
       fetchReportData();
     } else {
       // Clear data when no filter is selected
@@ -66,10 +73,9 @@ const Report = () => {
     }
   }, [
     selectedMonth,
-    selectedAgent,
-    selectedTourRecipient,
-    selectedTransferRecipient,
-    filterType,
+    selectedAgents,
+    selectedTourRecipients,
+    selectedTransferRecipients,
   ]);
 
   // Update select all checkboxes
@@ -97,121 +103,130 @@ const Report = () => {
       );
       const endDate = format(endOfMonth(new Date(selectedMonth)), "yyyy-MM-dd");
 
-      // Build query conditions based on filter type
-      let tourQuery = supabase
-        .from("tour_bookings")
-        .select(
-          `
-          *,
-          orders (
-            first_name,
-            last_name,
-            agent_name,
-            reference_id,
-            pax_adt,
-            pax_chd,
-            pax_inf
-          )
-        `
-        )
-        .gte("tour_date", startDate)
-        .lte("tour_date", endDate)
-        .order("tour_date", { ascending: true });
+      let allTourBookings = [];
+      let allTransferBookings = [];
 
-      let transferQuery = supabase
-        .from("transfer_bookings")
-        .select(
-          `
-          *,
-          orders (
-            first_name,
-            last_name,
-            agent_name,
-            reference_id,
-            pax_adt,
-            pax_chd,
-            pax_inf
-          )
-        `
-        )
-        .gte("transfer_date", startDate)
-        .lte("transfer_date", endDate)
-        .order("transfer_date", { ascending: true });
-
-      // Apply filters based on selected filter type
-      if (filterType === "agent" && selectedAgent) {
-        // Filter by joining with orders table
-        const { data: tourData, error: tourError } = await supabase
-          .from("tour_bookings")
-          .select(
+      // ดึงข้อมูลจาก Agent filters
+      if (selectedAgents.length > 0) {
+        for (const agent of selectedAgents) {
+          const { data: tourData } = await supabase
+            .from("tour_bookings")
+            .select(
+              `
+              *,
+              orders!inner (
+                first_name,
+                last_name,
+                agent_name,
+                reference_id,
+                pax_adt,
+                pax_chd,
+                pax_inf
+              )
             `
-            *,
-            orders!inner (
-              first_name,
-              last_name,
-              agent_name,
-              reference_id,
-              pax_adt,
-              pax_chd,
-              pax_inf
             )
-          `
-          )
-          .gte("tour_date", startDate)
-          .lte("tour_date", endDate)
-          .eq("orders.agent_name", selectedAgent)
-          .order("tour_date", { ascending: true });
+            .gte("tour_date", startDate)
+            .lte("tour_date", endDate)
+            .eq("orders.agent_name", agent)
+            .order("tour_date", { ascending: true });
 
-        const { data: transferData, error: transferError } = await supabase
-          .from("transfer_bookings")
-          .select(
+          const { data: transferData } = await supabase
+            .from("transfer_bookings")
+            .select(
+              `
+              *,
+              orders!inner (
+                first_name,
+                last_name,
+                agent_name,
+                reference_id,
+                pax_adt,
+                pax_chd,
+                pax_inf
+              )
             `
-            *,
-            orders!inner (
-              first_name,
-              last_name,
-              agent_name,
-              reference_id,
-              pax_adt,
-              pax_chd,
-              pax_inf
             )
-          `
-          )
-          .gte("transfer_date", startDate)
-          .lte("transfer_date", endDate)
-          .eq("orders.agent_name", selectedAgent)
-          .order("transfer_date", { ascending: true });
+            .gte("transfer_date", startDate)
+            .lte("transfer_date", endDate)
+            .eq("orders.agent_name", agent)
+            .order("transfer_date", { ascending: true });
 
-        if (tourError) throw tourError;
-        if (transferError) throw transferError;
-
-        setTourBookings(tourData || []);
-        setTransferBookings(transferData || []);
-      } else if (filterType === "tour_recipient" && selectedTourRecipient) {
-        // Filter only tour bookings by recipient
-        const { data: tourData, error: tourError } = await tourQuery.eq(
-          "send_to",
-          selectedTourRecipient
-        );
-
-        if (tourError) throw tourError;
-
-        setTourBookings(tourData || []);
-        setTransferBookings([]); // Clear transfer bookings
-      } else if (
-        filterType === "transfer_recipient" &&
-        selectedTransferRecipient
-      ) {
-        // Filter only transfer bookings by recipient
-        const { data: transferData, error: transferError } =
-          await transferQuery.eq("send_to", selectedTransferRecipient);
-
-        if (transferError) throw transferError;
-
-        setTourBookings([]); // Clear tour bookings
-        setTransferBookings(transferData || []);
+          if (tourData) allTourBookings = [...allTourBookings, ...tourData];
+          if (transferData)
+            allTransferBookings = [...allTransferBookings, ...transferData];
+        }
       }
+
+      // ดึงข้อมูลจาก Tour Recipient filters
+      if (selectedTourRecipients.length > 0) {
+        for (const recipient of selectedTourRecipients) {
+          const { data: tourData } = await supabase
+            .from("tour_bookings")
+            .select(
+              `
+              *,
+              orders (
+                first_name,
+                last_name,
+                agent_name,
+                reference_id,
+                pax_adt,
+                pax_chd,
+                pax_inf
+              )
+            `
+            )
+            .gte("tour_date", startDate)
+            .lte("tour_date", endDate)
+            .eq("send_to", recipient)
+            .order("tour_date", { ascending: true });
+
+          if (tourData) allTourBookings = [...allTourBookings, ...tourData];
+        }
+      }
+
+      // ดึงข้อมูลจาก Transfer Recipient filters
+      if (selectedTransferRecipients.length > 0) {
+        for (const recipient of selectedTransferRecipients) {
+          const { data: transferData } = await supabase
+            .from("transfer_bookings")
+            .select(
+              `
+              *,
+              orders (
+                first_name,
+                last_name,
+                agent_name,
+                reference_id,
+                pax_adt,
+                pax_chd,
+                pax_inf
+              )
+            `
+            )
+            .gte("transfer_date", startDate)
+            .lte("transfer_date", endDate)
+            .eq("send_to", recipient)
+            .order("transfer_date", { ascending: true });
+
+          if (transferData)
+            allTransferBookings = [...allTransferBookings, ...transferData];
+        }
+      }
+
+      // ลบข้อมูลซ้ำ (ถ้ามี)
+      const uniqueTourBookings = allTourBookings.filter(
+        (booking, index, self) =>
+          index === self.findIndex((b) => b.id === booking.id)
+      );
+
+      const uniqueTransferBookings = allTransferBookings.filter(
+        (booking, index, self) =>
+          index === self.findIndex((b) => b.id === booking.id)
+      );
+
+      setTourBookings(uniqueTourBookings);
+      setTransferBookings(uniqueTransferBookings);
 
       // Reset selections
       setSelectedTourIds(new Set());
@@ -226,38 +241,67 @@ const Report = () => {
     }
   };
 
-  const handleFilterTypeChange = (newFilterType) => {
-    setFilterType(newFilterType);
-    // Don't reset other values immediately, only when new selection is made
+  // Handle adding filters
+  const handleAddAgent = (agent) => {
+    if (!selectedAgents.includes(agent)) {
+      setSelectedAgents([...selectedAgents, agent]);
+    }
   };
 
-  const handleAgentChange = (value) => {
-    // Reset other filters when selecting agent
-    setSelectedTourRecipient("");
-    setSelectedTransferRecipient("");
-    setSelectedAgent(value);
+  const handleAddTourRecipient = (recipient) => {
+    if (!selectedTourRecipients.includes(recipient)) {
+      setSelectedTourRecipients([...selectedTourRecipients, recipient]);
+    }
   };
 
-  const handleTourRecipientChange = (value) => {
-    // Reset other filters when selecting tour recipient
-    setSelectedAgent("");
-    setSelectedTransferRecipient("");
-    setSelectedTourRecipient(value);
+  const handleAddTransferRecipient = (recipient) => {
+    if (!selectedTransferRecipients.includes(recipient)) {
+      setSelectedTransferRecipients([...selectedTransferRecipients, recipient]);
+    }
   };
 
-  const handleTransferRecipientChange = (value) => {
-    // Reset other filters when selecting transfer recipient
-    setSelectedAgent("");
-    setSelectedTourRecipient("");
-    setSelectedTransferRecipient(value);
+  // Handle removing filters
+  const handleRemoveFilter = (type, value) => {
+    switch (type) {
+      case "agent":
+        setSelectedAgents(selectedAgents.filter((agent) => agent !== value));
+        break;
+      case "tour_recipient":
+        setSelectedTourRecipients(
+          selectedTourRecipients.filter((recipient) => recipient !== value)
+        );
+        break;
+      case "transfer_recipient":
+        setSelectedTransferRecipients(
+          selectedTransferRecipients.filter((recipient) => recipient !== value)
+        );
+        break;
+    }
+  };
+
+  // Handle adding new information
+  const handleAddNewInformation = async (value, category) => {
+    try {
+      const result = await addInformation({
+        category,
+        value,
+        description: `เพิ่มจากหน้า Report`,
+        active: true,
+      });
+      return result.data;
+    } catch (error) {
+      throw new Error("ไม่สามารถเพิ่มข้อมูลใหม่ได้");
+    }
   };
 
   const handleReset = () => {
     setSelectedMonth(format(new Date(), "yyyy-MM"));
-    setFilterType("agent");
-    setSelectedAgent("");
-    setSelectedTourRecipient("");
-    setSelectedTransferRecipient("");
+    setSelectedAgents([]);
+    setSelectedTourRecipients([]);
+    setSelectedTransferRecipients([]);
+    setCurrentAgentValue("");
+    setCurrentTourValue("");
+    setCurrentTransferValue("");
     setSelectedTourIds(new Set());
     setSelectedTransferIds(new Set());
     setExportRange("full_month");
@@ -384,16 +428,20 @@ const Report = () => {
         return;
       }
 
-      // ปรับการเรียก exportReportToExcel ให้ส่งพารามิเตอร์ใหม่
+      // เตรียม selectedFilters object สำหรับ reportService
+      const selectedFilters = {
+        agents: selectedAgents,
+        tourRecipients: selectedTourRecipients,
+        transferRecipients: selectedTransferRecipients,
+      };
+
       const result = await exportReportToExcel(
         selectedTours,
         selectedTransfers,
         selectedMonth,
         exportRange,
         exportFormat,
-        filterType,
-        selectedTourRecipient,
-        selectedTransferRecipient
+        selectedFilters
       );
 
       if (result.success) {
@@ -405,9 +453,10 @@ const Report = () => {
       console.error("Export error:", error);
       showError("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
     } finally {
-      setIsExporting(false); // แก้ typo จาก setIsTrue เป็น setIsExporting
+      setIsExporting(false);
     }
   };
+
   const fetchAllDataForMonth = async () => {
     setLoading(true);
     setError(null);
@@ -813,82 +862,63 @@ const Report = () => {
           {/* Agent Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              <input
-                type="radio"
-                name="filterType"
-                value="agent"
-                checked={filterType === "agent"}
-                onChange={(e) => handleFilterTypeChange(e.target.value)}
-                className="mr-2"
-              />
               Agent
             </label>
-            <AutocompleteInput
+            <FilterInputWithAdd
               options={agents}
-              value={selectedAgent}
-              onChange={handleAgentChange}
+              value={currentAgentValue}
+              onChange={setCurrentAgentValue}
+              onAdd={handleAddAgent}
+              onAddNew={(value) => handleAddNewInformation(value, "agent")}
               placeholder="เลือก Agent"
-              className={`h-12 ${
-                filterType !== "agent" ? "pointer-events-none opacity-50" : ""
-              }`}
-              disabled={filterType !== "agent"}
+              selectedItems={selectedAgents}
             />
           </div>
 
           {/* Tour Recipient Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              <input
-                type="radio"
-                name="filterType"
-                value="tour_recipient"
-                checked={filterType === "tour_recipient"}
-                onChange={(e) => handleFilterTypeChange(e.target.value)}
-                className="mr-2"
-              />
               ส่งใคร (Tour)
             </label>
-            <AutocompleteInput
+            <FilterInputWithAdd
               options={tourRecipients}
-              value={selectedTourRecipient}
-              onChange={handleTourRecipientChange}
+              value={currentTourValue}
+              onChange={setCurrentTourValue}
+              onAdd={handleAddTourRecipient}
+              onAddNew={(value) =>
+                handleAddNewInformation(value, "tour_recipients")
+              }
               placeholder="เลือกผู้รับ Tour"
-              className={`h-12 ${
-                filterType !== "tour_recipient"
-                  ? "pointer-events-none opacity-50"
-                  : ""
-              }`}
-              disabled={filterType !== "tour_recipient"}
+              selectedItems={selectedTourRecipients}
             />
           </div>
 
           {/* Transfer Recipient Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              <input
-                type="radio"
-                name="filterType"
-                value="transfer_recipient"
-                checked={filterType === "transfer_recipient"}
-                onChange={(e) => handleFilterTypeChange(e.target.value)}
-                className="mr-2"
-              />
               ส่งใคร (Transfer)
             </label>
-            <AutocompleteInput
+            <FilterInputWithAdd
               options={transferRecipients}
-              value={selectedTransferRecipient}
-              onChange={handleTransferRecipientChange}
+              value={currentTransferValue}
+              onChange={setCurrentTransferValue}
+              onAdd={handleAddTransferRecipient}
+              onAddNew={(value) =>
+                handleAddNewInformation(value, "transfer_recipients")
+              }
               placeholder="เลือกผู้รับ Transfer"
-              className={`h-12 ${
-                filterType !== "transfer_recipient"
-                  ? "pointer-events-none opacity-50"
-                  : ""
-              }`}
-              disabled={filterType !== "transfer_recipient"}
+              selectedItems={selectedTransferRecipients}
             />
           </div>
         </div>
+
+        {/* Selected Filters Display */}
+        <SelectedFiltersDisplay
+          selectedAgents={selectedAgents}
+          selectedTourRecipients={selectedTourRecipients}
+          selectedTransferRecipients={selectedTransferRecipients}
+          onRemove={handleRemoveFilter}
+        />
 
         {/* Action Buttons */}
         <div className="flex flex-wrap justify-between items-center gap-4">
@@ -1095,9 +1125,9 @@ const Report = () => {
           {/* No Data Message */}
           {tourBookings.length === 0 && transferBookings.length === 0 && (
             <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500">
-              {!selectedAgent &&
-              !selectedTourRecipient &&
-              !selectedTransferRecipient
+              {selectedAgents.length === 0 &&
+              selectedTourRecipients.length === 0 &&
+              selectedTransferRecipients.length === 0
                 ? "กรุณาเลือกตัวกรองเพื่อแสดงข้อมูล"
                 : "ไม่พบข้อมูลตามเงื่อนไขที่เลือก"}
             </div>

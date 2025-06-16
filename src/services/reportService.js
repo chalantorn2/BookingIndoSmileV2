@@ -2,6 +2,48 @@ import ExcelJS from "exceljs";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { th } from "date-fns/locale";
 
+const generateFileName = (
+  selectedMonth,
+  exportRange,
+  exportFormat,
+  selectedFilters
+) => {
+  const monthEng = format(new Date(selectedMonth), "MMMM");
+  const year = format(new Date(selectedMonth), "yyyy");
+  const rangeTextEng = getRangeTextEng(exportRange);
+  const dateCreated = format(new Date(), "yyyyMMdd");
+
+  const agentCount = selectedFilters.agents?.length || 0;
+  const tourCount = selectedFilters.tourRecipients?.length || 0;
+  const transferCount = selectedFilters.transferRecipients?.length || 0;
+  const totalFilters = agentCount + tourCount + transferCount;
+
+  let filterText = "";
+
+  if (totalFilters > 1) {
+    const filterParts = [];
+    if (agentCount > 0)
+      filterParts.push(`${agentCount}agent${agentCount > 1 ? "s" : ""}`);
+    if (tourCount > 0)
+      filterParts.push(`${tourCount}tour${tourCount > 1 ? "s" : ""}`);
+    if (transferCount > 0)
+      filterParts.push(
+        `${transferCount}transfer${transferCount > 1 ? "s" : ""}`
+      );
+    filterText = filterParts.join("-");
+  } else if (totalFilters === 1) {
+    if (agentCount === 1) filterText = selectedFilters.agents[0];
+    else if (tourCount === 1)
+      filterText = `Tour${selectedFilters.tourRecipients[0]}`;
+    else if (transferCount === 1)
+      filterText = `Transfer${selectedFilters.transferRecipients[0]}`;
+  } else {
+    filterText = "รวม";
+  }
+
+  return `Report${filterText}${monthEng}${year}${rangeTextEng}${dateCreated}.xlsx`;
+};
+
 /**
  * ฟังก์ชันสำหรับ export รายงานเป็นไฟล์ Excel
  * @param {Array} tourBookings - รายการจอง tour
@@ -21,7 +63,12 @@ export const exportReportToExcel = async (
   exportFormat = "combined",
   filterType = "agent",
   selectedTourRecipient = "",
-  selectedTransferRecipient = ""
+  selectedTransferRecipient = "",
+  selectedFilters = {
+    agents: [],
+    tourRecipients: [],
+    transferRecipients: [],
+  }
 ) => {
   try {
     // สร้าง workbook ใหม่
@@ -87,7 +134,12 @@ export const exportReportToExcel = async (
       reportName = `รายการ Bookings Transfer ${selectedTransferRecipient}`;
     }
 
-    const fileName = `Report${typeText}${monthEng}${year}${rangeTextEng}${dateCreated}.xlsx`;
+    const fileName = generateFileName(
+      selectedMonth,
+      exportRange,
+      exportFormat,
+      selectedFilters
+    );
 
     // ตรวจสอบว่ามีข้อมูลอะไรบ้าง
     const hasTour = filteredTourBookings.length > 0;
