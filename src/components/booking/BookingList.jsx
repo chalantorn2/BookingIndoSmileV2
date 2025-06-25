@@ -247,7 +247,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   };
 
   return (
-    <div className="relative space-y-3 font-prompt">
+    <div className="relative space-y-3 font-Prompt">
       {sortedBookings.map((booking, index) => {
         const firstName = booking.orders?.first_name || "";
         const lastName = booking.orders?.last_name || "";

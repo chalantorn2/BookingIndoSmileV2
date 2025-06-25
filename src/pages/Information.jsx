@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 import {
-  fetchInformationByCategory,
+  searchInformationByCategory,
   addInformation,
   updateInformation,
   deactivateInformation,
 } from "../services/informationService";
-import { Plus, Edit, Trash, Save, X } from "lucide-react";
+import { Plus, Edit, Trash, Save, X, Shuffle } from "lucide-react";
 import { useInformation } from "../contexts/InformationContext";
 import { useNotification } from "../hooks/useNotification";
 import { useAlertDialogContext } from "../contexts/AlertDialogContext";
+import SearchBar from "../components/information/SearchBar";
+import PaginationControls from "../components/information/PaginationControls";
+import MigrationModal from "../components/information/MigrationModal";
 
 const Information = () => {
   const showAlert = useAlertDialogContext();
@@ -36,6 +39,16 @@ const Information = () => {
   });
   const [addingNew, setAddingNew] = useState(false);
 
+  // Pagination & Search states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 10;
+
+  // Migration states
+  const [isMigrationOpen, setIsMigrationOpen] = useState(false);
+
   const supportsPhone = () => {
     return ["agent", "tour_recipient", "transfer_recipient", "place"].includes(
       selectedCategory
@@ -43,18 +56,33 @@ const Information = () => {
   };
 
   useEffect(() => {
-    loadInformationData();
+    // Reset page และ search เฉพาะเมื่อเปลี่ยน category
+    setCurrentPage(1);
+    setSearchQuery("");
+    setEditingItem(null);
+    setAddingNew(false);
   }, [selectedCategory]);
 
-  const loadInformationData = async () => {
+  useEffect(() => {
+    loadInformationData();
+  }, [selectedCategory, searchQuery]);
+
+  const loadInformationData = async (page = currentPage) => {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await fetchInformationByCategory(
-        selectedCategory
+      const {
+        data,
+        total,
+        totalPages: pages,
+        error,
+      } = await searchInformationByCategory(
+        selectedCategory,
+        searchQuery,
+        page,
+        itemsPerPage
       );
-      console.log(`🔍 Loaded ${selectedCategory} data:`, data);
 
       if (error) {
         console.error(`❌ Error loading ${selectedCategory} data:`, error);
@@ -62,6 +90,8 @@ const Information = () => {
         showError(`ไม่สามารถโหลดข้อมูลได้: ${error}`);
       } else {
         setInformationData(data);
+        setTotalItems(total);
+        setTotalPages(pages);
       }
     } catch (err) {
       console.error(`💥 Exception in loadInformationData:`, err);
@@ -73,9 +103,22 @@ const Information = () => {
   };
 
   const handleCategoryChange = (categoryId) => {
-    setSelectedCategory(categoryId);
-    setEditingItem(null);
-    setAddingNew(false);
+    if (categoryId !== selectedCategory) {
+      setSelectedCategory(categoryId);
+      // การ reset อื่นๆ จะทำใน useEffect
+    }
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query !== searchQuery) {
+      setCurrentPage(1);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    loadInformationData(page);
   };
 
   const handleEditItem = (item) => {
@@ -114,7 +157,6 @@ const Information = () => {
 
     try {
       const result = await updateInformation(editingItem.id, updateData);
-      console.log(`🔍 Update result for ID ${editingItem.id}:`, result);
 
       if (result.success) {
         await loadInformationData();
@@ -125,7 +167,6 @@ const Information = () => {
         showError(`ไม่สามารถบันทึกข้อมูลได้: ${result.error}`);
       }
     } catch (err) {
-      console.error(`💥 Exception in handleSaveEdit:`, err);
       showError(`เกิดข้อผิดพลาดในการบันทึก: ${err.message}`);
     }
   };
@@ -159,10 +200,9 @@ const Information = () => {
 
     try {
       const result = await addInformation(newData);
-      console.log(`🔍 Add new result:`, result);
 
       if (result.data) {
-        await loadInformationData(); // Reload data from database
+        await loadInformationData();
         refreshInformation();
         setAddingNew(false);
         setNewItem({ value: "", description: "", phone: "" });
@@ -171,7 +211,6 @@ const Information = () => {
         showError(`ไม่สามารถเพิ่มข้อมูลได้: ${result.error}`);
       }
     } catch (err) {
-      console.error(`💥 Exception in handleSaveNew:`, err);
       showError(`เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ${err.message}`);
     }
   };
@@ -190,7 +229,6 @@ const Information = () => {
 
       try {
         const result = await deactivateInformation(id);
-        console.log(`🔍 Deactivate result for ID ${id}:`, result);
 
         if (result.success) {
           showSuccess("ยกเลิกการใช้งานข้อมูลเรียบร้อย");
@@ -200,12 +238,25 @@ const Information = () => {
           showError(`ไม่สามารถยกเลิกการใช้งานข้อมูลได้: ${result.error}`);
         }
       } catch (err) {
-        console.error(`💥 Exception in handleDeactivate:`, err);
         showError(`เกิดข้อผิดพลาดในการยกเลิก: ${err.message}`);
       } finally {
         setLoading(false);
       }
     }
+  };
+
+  const handleMigrationComplete = () => {
+    showSuccess("รวมข้อมูลเรียบร้อยแล้ว");
+    loadInformationData();
+    refreshInformation();
+  };
+
+  const handleOpenMigration = () => {
+    if (totalItems < 2) {
+      showInfo("ต้องมีข้อมูลอย่างน้อย 2 รายการเพื่อทำการ Migration");
+      return;
+    }
+    setIsMigrationOpen(true);
   };
 
   return (
@@ -242,21 +293,41 @@ const Information = () => {
 
           {/* Content */}
           <div className="w-full md:w-3/4 p-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
               <h2 className="text-xl font-semibold">
                 {categories.find((cat) => cat.id === selectedCategory)?.label ||
                   selectedCategory}
               </h2>
 
-              <button
-                onClick={handleAddNew}
-                className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md flex items-center"
-                disabled={addingNew}
-              >
-                <Plus size={18} className="mr-1" />
-                เพิ่มข้อมูลใหม่
-              </button>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <button
+                  onClick={handleOpenMigration}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-md flex items-center"
+                  disabled={loading}
+                >
+                  <Shuffle size={18} className="mr-1" />
+                  Migration
+                </button>
+
+                <button
+                  onClick={handleAddNew}
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md flex items-center"
+                  disabled={addingNew}
+                >
+                  <Plus size={18} className="mr-1" />
+                  เพิ่มข้อมูลใหม่
+                </button>
+              </div>
             </div>
+
+            {/* Search Bar */}
+            <SearchBar
+              onSearch={handleSearch}
+              placeholder={`ค้นหา${
+                categories.find((cat) => cat.id === selectedCategory)?.label
+              }...`}
+              className="mb-4"
+            />
 
             {loading ? (
               <div className="text-center py-6">
@@ -363,7 +434,9 @@ const Information = () => {
                             colSpan={supportsPhone() ? "4" : "3"}
                             className="px-6 py-4 text-center text-gray-500"
                           >
-                            ไม่พบข้อมูล
+                            {searchQuery
+                              ? "ไม่พบข้อมูลที่ค้นหา"
+                              : "ไม่พบข้อมูล"}
                           </td>
                         </tr>
                       ) : (
@@ -455,11 +528,29 @@ const Information = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination */}
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  className="mt-4"
+                />
               </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Migration Modal */}
+      <MigrationModal
+        isOpen={isMigrationOpen}
+        onClose={() => setIsMigrationOpen(false)}
+        category={selectedCategory}
+        onMigrationComplete={handleMigrationComplete}
+      />
     </div>
   );
 };
