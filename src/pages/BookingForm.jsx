@@ -119,9 +119,9 @@ const BookingForm = () => {
       agent: orderData.agent_name || "",
       firstName: orderData.first_name || "",
       lastName: orderData.last_name || "",
-      paxAdt: paxTotal,
-      paxChd: "0",
-      paxInf: "0",
+      paxAdt: orderData.pax_adt?.toString() || "0", // ✅ ถูก
+      paxChd: orderData.pax_chd?.toString() || "0", // ✅ ถูก
+      paxInf: orderData.pax_inf?.toString() || "0", // ✅ ถูก
     });
 
     if (orderData.tour_bookings && orderData.tour_bookings.length > 0) {
@@ -164,9 +164,9 @@ const BookingForm = () => {
         agent: data.agent_name || "",
         firstName: data.first_name || "",
         lastName: data.last_name || "",
-        paxAdt: paxTotal,
-        paxChd: "0",
-        paxInf: "0",
+        paxAdt: data.pax_adt?.toString() || "0", // ✅ ถูก
+        paxChd: data.pax_chd?.toString() || "0", // ✅ ถูก
+        paxInf: data.pax_inf?.toString() || "0", // ✅ ถูก
       });
 
       setTourForms([]);

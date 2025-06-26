@@ -322,15 +322,51 @@ const Invoice = () => {
         setError("ไม่พบข้อมูล Invoice");
         return;
       }
+
       setCurrentInvoice(data);
       setInvoiceId(selectedInvoiceId);
       setInvoiceName(data.invoice_name || "");
       setInvoiceDate(data.invoice_date || format(new Date(), "dd/MM/yyyy"));
       setSelectedPaymentIds(data.payment_ids || []);
-      setGrandTotal(parseFloat(data.total_amount) || 0);
-      setTotalCost(parseFloat(data.total_cost) || 0);
-      setTotalSellingPrice(parseFloat(data.total_selling_price) || 0);
-      setTotalProfit(parseFloat(data.total_profit) || 0);
+
+      // **เพิ่มส่วนนี้: คำนวณ GRAND TOTAL ใหม่จาก Payment**
+      let realTimeGrandTotal = 0;
+      let realTimeTotalCost = 0;
+      let realTimeTotalSellingPrice = 0;
+      let realTimeTotalProfit = 0;
+
+      if (data.payment_ids && data.payment_ids.length > 0) {
+        const relatedPayments = allPaymentsData.filter((p) =>
+          data.payment_ids.includes(p.id)
+        );
+
+        relatedPayments.forEach((payment) => {
+          if (payment.bookings && Array.isArray(payment.bookings)) {
+            payment.bookings.forEach((booking) => {
+              const price = parseFloat(booking.sellingPrice) || 0;
+              const quantity = parseInt(booking.quantity) || 0;
+              const cost = parseFloat(booking.cost) || 0;
+
+              const rowTotal = price * quantity;
+              const rowCost = cost * quantity;
+
+              realTimeGrandTotal += rowTotal;
+              realTimeTotalCost += rowCost;
+              realTimeTotalSellingPrice += rowTotal;
+            });
+          }
+        });
+
+        realTimeTotalProfit = realTimeTotalSellingPrice - realTimeTotalCost;
+      }
+
+      // ใช้ค่าที่คำนวณใหม่แทนค่าจาก database
+      setGrandTotal(realTimeGrandTotal);
+      setTotalCost(realTimeTotalCost);
+      setTotalSellingPrice(realTimeTotalSellingPrice);
+      setTotalProfit(realTimeTotalProfit);
+      // **จบส่วนที่เพิ่ม**
+
       setIsViewModalOpen(false);
     } catch (error) {
       console.error("Error loading invoice:", error);
@@ -677,148 +713,166 @@ const Invoice = () => {
 
     // สร้าง HTML สำหรับส่วนที่จะพิมพ์
     printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Invoice Print</title>
-        <style>
-          /* รีเซ็ตสไตล์ */
-          * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-          }
-          
-          /* สไตล์หลัก */
-          body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            padding: 10mm;
-          }
-          
-          /* สไตล์ตาราง */
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          
-          th, td {
-            border: 1px solid #000;
-            padding: 3px;
-          }
-          
-          th {
-            background-color: #f3f4f6;
-            font-weight: bold;
-          }
-          
-          /* สไตล์ส่วนหัวและท้าย */
-          .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-          }
-          
-          .invoice-header-right {
-            text-align: right;
-          }
-          
-          .invoice-footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-          }
-          
-          /* สไตล์แถวสรุป */
-          .total-row {
-            background-color: #f8f9fa;
-            font-weight: bold;
-          }
-          
-          .grand-total-row {
-            background-color: #f0fff4;
-            font-weight: bold;
-          }
-          
-          /* การกำหนดขนาดคอลัมน์ */
-          table th:nth-child(1), table td:nth-child(1) { width: 30px; }  /* Item */
-          table th:nth-child(2), table td:nth-child(2) { width: 130px; } /* NAME */
-          table th:nth-child(3), table td:nth-child(3) { width: 40px; }  /* REF */
-          table th:nth-child(4), table td:nth-child(4) { width: 80px; }  /* Hotel */
-          table th:nth-child(5), table td:nth-child(5) { width: 70px; }  /* Date */
-          table th:nth-child(6), table td:nth-child(6) { width: 150px; } /* TOUR INCLUDE */
-          table th:nth-child(7), table td:nth-child(7) { width: 60px; }  /* PRICE */
-table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
-         table th:nth-child(9), table td:nth-child(9) { width: 30px; }  /* Unit */
-         table th:nth-child(10), table td:nth-child(10) { width: 60px; } /* TOTAL */
-         
-         @page {
-           size: landscape;
-           margin: 10mm;
-         }
-       </style>
-     </head>
-     <body onload="window.print(); window.setTimeout(function(){ window.close(); }, 500);">
-   `);
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Invoice Print</title>
+      <style>
+        /* รีเซ็ตสไตล์ */
+        * { 
+          margin: 0; 
+          padding: 0; 
+          box-sizing: border-box; 
+        }
+        
+        /* สไตล์หลัก */
+        body {
+          font-family: Arial, sans-serif;
+          font-size: 12px;
+          padding: 10mm;
+        }
+        
+        /* สไตล์ตาราง - เพิ่ม table-layout: fixed */
+        table {
+          width: 100% !important;
+          table-layout: fixed !important;
+          border-collapse: collapse !important;
+        }
+        
+        th, td {
+          border: 1px solid #000;
+          padding: 3px;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
+        th {
+          background-color: #f3f4f6;
+          font-weight: bold;
+        }
+        
+        /* สไตล์ส่วนหัวและท้าย */
+        .invoice-header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 15px;
+        }
+        
+        .invoice-header-right {
+          text-align: right;
+        }
+        
+        .invoice-footer {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 20px;
+        }
+        
+        /* สไตล์แถวสรุป */
+        .total-row {
+          background-color: #f8f9fa;
+          font-weight: bold;
+        }
+        
+        .grand-total-row {
+          background-color: #f0fff4;
+          font-weight: bold;
+        }
+        
+        /* การกำหนดขนาดคอลัมน์ใหม่ - ใช้เปอร์เซ็นต์ */
+        table th:nth-child(1), table td:nth-child(1) { width: 4%; }   /* Item */
+        table th:nth-child(2), table td:nth-child(2) { width: 15%; }  /* NAME */
+        table th:nth-child(3), table td:nth-child(3) { width: 6%; }   /* REF */
+        table th:nth-child(4), table td:nth-child(4) { width: 12%; }  /* Hotel */
+        table th:nth-child(5), table td:nth-child(5) { width: 8%; }  /* Date */
+        table th:nth-child(6), table td:nth-child(6) { width: 33%; }  /* TOUR INCLUDE - ขยายให้ใหญ่ที่สุด */
+        table th:nth-child(7), table td:nth-child(7) { width: 6%; }   /* PRICE - เท่ากัน */
+        table th:nth-child(8), table td:nth-child(8) { width: 5%; }   /* Fee - เท่ากัน */
+        table th:nth-child(9), table td:nth-child(9) { width: 4%; }   /* Unit - เท่ากัน */
+        table th:nth-child(10), table td:nth-child(10) { width: 7%; } /* TOTAL - เท่ากัน */
+        
+        /* สำหรับโหมดที่มี Cost/Profit (12 คอลัมน์) */
+        table.with-cost-profit th:nth-child(1), table.with-cost-profit td:nth-child(1) { width: 4%; }   /* Item */
+        table.with-cost-profit th:nth-child(2), table.with-cost-profit td:nth-child(2) { width: 18%; }  /* NAME */
+        table.with-cost-profit th:nth-child(3), table.with-cost-profit td:nth-child(3) { width: 5%; }   /* REF */
+        table.with-cost-profit th:nth-child(4), table.with-cost-profit td:nth-child(4) { width: 10%; }  /* Hotel */
+        table.with-cost-profit th:nth-child(5), table.with-cost-profit td:nth-child(5) { width: 8%; }   /* Date */
+        table.with-cost-profit th:nth-child(6), table.with-cost-profit td:nth-child(6) { width: 22%; }  /* TOUR INCLUDE */
+        table.with-cost-profit th:nth-child(7), table.with-cost-profit td:nth-child(7) { width: 6%; }   /* Cost */
+        table.with-cost-profit th:nth-child(8), table.with-cost-profit td:nth-child(8) { width: 6%; }   /* PRICE */
+        table.with-cost-profit th:nth-child(9), table.with-cost-profit td:nth-child(9) { width: 6%; }   /* Profit */
+        table.with-cost-profit th:nth-child(10), table.with-cost-profit td:nth-child(10) { width: 6%; } /* Fee */
+        table.with-cost-profit th:nth-child(11), table.with-cost-profit td:nth-child(11) { width: 3%; } /* Unit */
+        table.with-cost-profit th:nth-child(12), table.with-cost-profit td:nth-child(12) { width: 6%; } /* TOTAL */
+        
+        @page {
+          size: landscape;
+          margin: 10mm;
+        }
+      </style>
+    </head>
+    <body onload="window.print(); window.setTimeout(function(){ window.close(); }, 500);">
+  `);
 
     // เพิ่มส่วนหัว Invoice
     printWindow.document.write(`
-     <style>
-       .invoice-header {
-         display: flex; /* ใช้ Flexbox เพื่อแบ่งสัดส่วน */
-         justify-content: space-between; /* ให้ช่องว่างระหว่างรูปและข้อความ */
-         align-items: center; /* จัดแนวให้อยู่กึ่งกลางในแนวตั้ง */
-         width: 100%; /* ใช้ความกว้างเต็ม */
-       }
-       .invoice-header > div:first-child {
-         width: 60%; /* รูปภาพใช้ 60% ของความกว้าง */
-       }
-       .invoice-header > div:last-child {
-         width: 40%; /* ข้อความด้านขวาใช้ 40% ของความกว้าง */
-         text-align: right; /* จัดข้อความชิดขวา */
-       }
-       #bannerImage {
-         width: 100%; /* รูปภาพจะปรับให้เต็มความกว้างของ 60% */
-         height: auto; /* รักษาสัดส่วน */
-       }
-     </style>
-     <div class="invoice-header">
-       <div>
-         <img id="bannerImage" src="../../assets/banner-06.png" alt="INDO Smile Tour & Ticket" />
-       </div>
-       <div class="invoice-header-right">
-         <h2 style="font-size: 18px; margin-bottom: 5px;">INVOICE</h2>
-         <p>ATTN: ACCOUNTING DEPT.</p>
-         <p>DATE: ${invoiceDate}</p>
-       </div>
-     </div>
-   `);
+    <style>
+      .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      .invoice-header > div:first-child {
+        width: 60%;
+      }
+      .invoice-header > div:last-child {
+        width: 40%;
+        text-align: right;
+      }
+      #bannerImage {
+        width: 100%;
+        height: auto;
+      }
+    </style>
+    <div class="invoice-header">
+      <div>
+        <img id="bannerImage" src="../../assets/banner-06.png" alt="SevenSmile Tour & Ticket" />
+      </div>
+      <div class="invoice-header-right">
+        <h2 style="font-size: 18px; margin-bottom: 5px;">INVOICE</h2>
+        <p>ATTN: ACCOUNTING DEPT.</p>
+        <p>DATE: ${invoiceDate}</p>
+      </div>
+    </div>
+  `);
 
-    // เริ่มตาราง
+    // เริ่มตาราง - เพิ่ม class ตามโหมด
+    const tableClass = showCostProfit ? "with-cost-profit" : "";
     printWindow.document.write(`
-     <table>
-       <thead>
-         <tr>
-           <th>Item</th>
-           <th>NAME</th>
-           <th>REF.</th>
-           <th>Hotel</th>
-           <th>Date in PHUKET</th>
-           <th>TOUR INCLUDE</th>
-           ${
-             showCostProfit
-               ? `<th>Cost</th>
-              <th>PRICE</th>
-              <th>Profit</th>`
-               : `<th>PRICE</th>`
-           }
-           <th>Fee</th>
-           <th>Unit</th>
-           <th>TOTAL</th>
-         </tr>
-       </thead>
-       <tbody>
-   `);
+    <table class="${tableClass}">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>NAME</th>
+          <th>REF.</th>
+          <th>Hotel</th>
+          <th>Date in PHUKET</th>
+          <th>TOUR INCLUDE</th>
+          ${
+            showCostProfit
+              ? `<th>Cost</th>
+             <th>PRICE</th>
+             <th>Profit</th>`
+              : `<th>PRICE</th>`
+          }
+          <th>Fee</th>
+          <th>Unit</th>
+          <th>TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+  `);
 
     // สร้างแถวของตาราง
     if (selectedPaymentIds.length > 0) {
@@ -985,19 +1039,19 @@ table th:nth-child(8), table td:nth-child(8) { width: 40px; }  /* Fee */
 
     // เพิ่มส่วนท้าย Invoice
     printWindow.document.write(`
-     <div class="invoice-footer">
-       <div>
-         <p style="font-weight: bold; margin-bottom: 5px;">PAYMENT TO INDO Smile</p>
-         <p>KRUNGSRI 6641121789</p>
-         <p>ACCT : TAWEE WONGPIENKIT</p>
-       </div>
-       <div style="text-align: right;">
-         <p style="font-weight: bold; font-size: 14px;">GRAND TOTAL: ${formatNumberWithCommas(
-           grandTotal || 0
-         )} THB</p>
-       </div>
-     </div>
-   `);
+    <div class="invoice-footer">
+      <div>
+        <p style="font-weight: bold; margin-bottom: 5px;">PAYMENT TO SEVENSMILE</p>
+        <p>KBank 255-2431-068</p>
+        <p>ACCT : Janthawarath Loosathidkool</p>
+      </div>
+      <div style="text-align: right;">
+        <p style="font-weight: bold; font-size: 14px;">GRAND TOTAL: ${formatNumberWithCommas(
+          grandTotal || 0
+        )} THB</p>
+      </div>
+    </div>
+  `);
 
     // ปิด document
     printWindow.document.write("</body></html>");

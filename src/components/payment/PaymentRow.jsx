@@ -50,6 +50,22 @@ const PaymentRow = ({ booking, index, onRemove, onChange }) => {
       console.log(
         `Updated payment status for ${table} ID ${booking.dbKey} to ${paymentStatus}`
       );
+
+      // **เพิ่มส่วนนี้ภายใน try-catch เดิม**
+      // อัพเดท Invoice ที่เกี่ยวข้อง
+      if (booking.paymentId) {
+        const { findInvoicesByPaymentId, recalculateInvoiceTotals } =
+          await import("../../services/invoiceService");
+
+        const { data: relatedInvoices } = await findInvoicesByPaymentId(
+          booking.paymentId
+        );
+
+        for (const invoice of relatedInvoices || []) {
+          await recalculateInvoiceTotals(invoice.id);
+        }
+      }
+      // **จบส่วนที่เพิ่ม**
     } catch (error) {
       console.error("Error updating payment status:", error);
     }

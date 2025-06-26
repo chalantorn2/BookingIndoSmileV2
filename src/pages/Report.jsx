@@ -10,6 +10,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { useInformation } from "../contexts/InformationContext";
+import ExportModal from "../components/report/ExportModal";
 import { useNotification } from "../hooks/useNotification";
 import FilterInputWithAdd from "../components/common/FilterInputWithAdd";
 import SelectedFiltersDisplay from "../components/common/SelectedFiltersDisplay";
@@ -18,6 +19,7 @@ import supabase from "../config/supabaseClient";
 
 const Report = () => {
   const { showSuccess, showError, showInfo } = useNotification();
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const { agents, tourRecipients, transferRecipients, addInformation } =
     useInformation();
 
@@ -388,8 +390,10 @@ const Report = () => {
     CustomerName: true,
     Pax: true,
     PickupTime: false,
-    HotelOrPickup: false,
-    DetailsOrDropoff: false,
+    Hotel: false, // เปลี่ยนจาก HotelOrPickup
+    Details: false, // เปลี่ยนจาก DetailsOrDropoff
+    PickupFrom: false, // ใหม่
+    DropTo: false, // ใหม่
     Flight: false,
     FlightTime: false,
     SendTo: false,
@@ -408,26 +412,35 @@ const Report = () => {
   };
 
   const handleExport = async () => {
+    // ตรวจสอบข้อมูลก่อน
+    const selectedTours =
+      selectedTourIds.size > 0
+        ? tourBookings.filter((b) => selectedTourIds.has(b.id))
+        : tourBookings;
+
+    const selectedTransfers =
+      selectedTransferIds.size > 0
+        ? transferBookings.filter((b) => selectedTransferIds.has(b.id))
+        : transferBookings;
+
+    if (selectedTours.length === 0 && selectedTransfers.length === 0) {
+      showError("ไม่มีข้อมูลสำหรับ Export");
+      return;
+    }
+
+    // เปิด Modal แทนการ Export ทันที
+    setIsExportModalOpen(true);
+  };
+
+  const handleConfirmExport = async (
+    finalTourBookings,
+    finalTransferBookings
+  ) => {
     setIsExporting(true);
+    setIsExportModalOpen(false);
     showInfo("กำลังสร้างไฟล์ Excel กรุณารอสักครู่...");
 
     try {
-      // Determine which bookings to export
-      const selectedTours =
-        selectedTourIds.size > 0
-          ? tourBookings.filter((b) => selectedTourIds.has(b.id))
-          : tourBookings;
-
-      const selectedTransfers =
-        selectedTransferIds.size > 0
-          ? transferBookings.filter((b) => selectedTransferIds.has(b.id))
-          : transferBookings;
-
-      if (selectedTours.length === 0 && selectedTransfers.length === 0) {
-        showError("ไม่มีข้อมูลสำหรับ Export");
-        return;
-      }
-
       // เตรียม selectedFilters object สำหรับ reportService
       const selectedFilters = {
         agents: selectedAgents,
@@ -436,8 +449,8 @@ const Report = () => {
       };
 
       const result = await exportReportToExcel(
-        selectedTours,
-        selectedTransfers,
+        finalTourBookings,
+        finalTransferBookings,
         selectedMonth,
         exportRange,
         exportFormat,
@@ -552,8 +565,10 @@ const Report = () => {
       { key: "CustomerName", label: "ชื่อลูกค้า" },
       { key: "Pax", label: "จำนวนคน" },
       { key: "PickupTime", label: "เวลารับ" },
-      { key: "HotelOrPickup", label: "โรงแรม" },
-      { key: "DetailsOrDropoff", label: "รายละเอียด" },
+      { key: "PickupFrom", label: "รับจาก" }, // ใหม่
+      { key: "DropTo", label: "ส่งที่" }, // ใหม่
+      { key: "Flight", label: "เที่ยวบิน" },
+      { key: "FlightTime", label: "เวลาบิน" },
       { key: "SendTo", label: "ส่ง" },
       { key: "Note", label: "หมายเหตุ" },
       { key: "Cost", label: "Cost" },
@@ -624,16 +639,14 @@ const Report = () => {
                         ? "text-right"
                         : ""
                     } ${
-                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                      ["Details", "Note"].includes(col.key)
                         ? "max-w-xs truncate"
                         : ""
                     }`}
                     title={
-                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                      ["Details", "Note"].includes(col.key)
                         ? booking[
-                            col.key === "DetailsOrDropoff"
-                              ? "tour_detail"
-                              : "note"
+                            col.key === "Details" ? "tour_detail" : "note"
                           ]
                         : undefined
                     }
@@ -654,10 +667,10 @@ const Report = () => {
                       ? formatPax(booking)
                       : col.key === "PickupTime"
                       ? booking.tour_pickup_time || "-"
-                      : col.key === "HotelOrPickup"
-                      ? booking.tour_hotel || "-"
-                      : col.key === "DetailsOrDropoff"
-                      ? booking.tour_detail || "-"
+                      : col.key === "Hotel"
+                      ? booking.tour_hotel || "-" // ใหม่
+                      : col.key === "Details"
+                      ? booking.tour_detail || "-" // ใหม่
                       : col.key === "SendTo"
                       ? booking.send_to || "-"
                       : col.key === "Note"
@@ -769,14 +782,16 @@ const Report = () => {
                         ? "text-right"
                         : ""
                     } ${
-                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                      ["PickupFrom", "DropTo", "Note"].includes(col.key)
                         ? "max-w-xs truncate"
                         : ""
                     }`}
                     title={
-                      ["DetailsOrDropoff", "Note"].includes(col.key)
+                      ["PickupFrom", "DropTo", "Note"].includes(col.key)
                         ? booking[
-                            col.key === "DetailsOrDropoff"
+                            col.key === "PickupFrom"
+                              ? "pickup_location"
+                              : col.key === "DropTo"
                               ? "drop_location"
                               : "note"
                           ]
@@ -799,10 +814,10 @@ const Report = () => {
                       ? formatPax(booking)
                       : col.key === "PickupTime"
                       ? booking.transfer_time || "-"
-                      : col.key === "HotelOrPickup"
-                      ? booking.pickup_location || "-"
-                      : col.key === "DetailsOrDropoff"
-                      ? booking.drop_location || "-"
+                      : col.key === "PickupFrom"
+                      ? booking.pickup_location || "-" // ใหม่
+                      : col.key === "DropTo"
+                      ? booking.drop_location || "-" // ใหม่
                       : col.key === "Flight"
                       ? booking.transfer_flight || "-"
                       : col.key === "FlightTime"
@@ -1075,10 +1090,14 @@ const Report = () => {
                     className="form-checkbox h-4 w-4 text-blue-600"
                   />
                   <span className="text-sm text-gray-700">
-                    {column === "HotelOrPickup"
-                      ? "โรงแรม/รับจาก"
-                      : column === "DetailsOrDropoff"
-                      ? "รายละเอียด/ส่งที่"
+                    {column === "Hotel"
+                      ? "โรงแรม"
+                      : column === "Details"
+                      ? "รายละเอียด"
+                      : column === "PickupFrom"
+                      ? "รับจาก"
+                      : column === "DropTo"
+                      ? "ส่งที่"
                       : column === "CustomerName"
                       ? "ชื่อลูกค้า"
                       : column === "PickupTime"
@@ -1133,6 +1152,26 @@ const Report = () => {
             </div>
           )}
         </>
+      )}
+      {/* Export Modal */}
+      {isExportModalOpen && (
+        <ExportModal
+          tourBookings={
+            selectedTourIds.size > 0
+              ? tourBookings.filter((b) => selectedTourIds.has(b.id))
+              : tourBookings
+          }
+          transferBookings={
+            selectedTransferIds.size > 0
+              ? transferBookings.filter((b) => selectedTransferIds.has(b.id))
+              : transferBookings
+          }
+          onConfirm={handleConfirmExport}
+          onCancel={() => setIsExportModalOpen(false)}
+          selectedMonth={selectedMonth}
+          exportFormat={exportFormat}
+          exportRange={exportRange}
+        />
       )}
     </div>
   );

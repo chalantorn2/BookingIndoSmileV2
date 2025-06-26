@@ -243,12 +243,18 @@ const usePayments = () => {
         .eq("order_id", order.id)
         .single();
 
-      // ใช้ฟังก์ชัน handlePaymentEdit แทน savePayment
       const result = await handlePaymentEdit(paymentData, existingPayment);
 
       if (!result.success) {
         throw new Error(result.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
+
+      // **เพิ่มส่วนนี้**
+      // อัพเดท Invoice ที่เกี่ยวข้องเมื่อ Payment เปลี่ยน
+      if (existingPayment?.id) {
+        await updateRelatedInvoices(existingPayment.id);
+      }
+      // **จบส่วนที่เพิ่ม**
 
       return { success: true, paymentID };
     } catch (error) {
