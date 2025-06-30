@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { ServiceItem, VoucherInput } from "./VoucherForm";
 import { Check } from "lucide-react";
@@ -13,6 +13,7 @@ const TourVoucherForm = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const detailRef = useRef(null);
 
   const [voucherData, setVoucherData] = useState({
     customer_name: "",
@@ -120,6 +121,41 @@ const TourVoucherForm = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // ฟังก์ชันจัดการ cursor position
+  const handleDetailChange = (e, fieldName) => {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const cursorPosition = range.startOffset;
+
+    const newValue = e.currentTarget.textContent;
+    setVoucherData((prev) => ({
+      ...prev,
+      [fieldName]: newValue,
+    }));
+
+    // Restore cursor position after state update
+    setTimeout(() => {
+      if (detailRef.current) {
+        const textNode = detailRef.current.firstChild || detailRef.current;
+        const newRange = document.createRange();
+        const sel = window.getSelection();
+
+        if (textNode.nodeType === Node.TEXT_NODE) {
+          const maxPos = textNode.textContent.length;
+          const pos = Math.min(cursorPosition, maxPos);
+          newRange.setStart(textNode, pos);
+          newRange.setEnd(textNode, pos);
+        } else {
+          newRange.selectNodeContents(detailRef.current);
+          newRange.collapse(false);
+        }
+
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+    }, 0);
   };
 
   return (
@@ -246,20 +282,16 @@ const TourVoucherForm = ({
                 </span>
                 <div className="relative flex-1">
                   <div
+                    ref={detailRef}
                     contentEditable
                     suppressContentEditableWarning
-                    onInput={(e) => {
-                      const newValue = e.currentTarget.textContent;
-                      setVoucherData((prev) => ({
-                        ...prev,
-                        tour_detail: newValue,
-                      }));
-                    }}
-                    className="focus:outline-none w-full text-center font-Prompt whitespace-pre-wrap min-h-[1.2em] py-0"
+                    onInput={(e) => handleDetailChange(e, "tour_detail")} // หรือ transfer_detail
+                    className="focus:outline-none w-full text-center font-kanit whitespace-pre-wrap min-h-[1.2em] py-0"
                     style={{ textAlign: "center", lineHeight: "1.2" }}
-                  >
-                    {voucherData.tour_detail || ""}
-                  </div>
+                    dangerouslySetInnerHTML={{
+                      __html: voucherData.tour_detail || "",
+                    }}
+                  />
                   <div className="border-b border-gray-500 mt-0"></div>
                 </div>
               </div>
