@@ -503,8 +503,9 @@ const InvoiceStatusModal = ({ isOpen, onClose, onInvoiceSelect }) => {
                     </p>
                     <p>
                       <span className="font-medium">ยอดรวม:</span>{" "}
-                      {parseFloat(
-                        selectedInvoice.total_amount || 0
+                      {(
+                        parseFloat(selectedInvoice.total_amount || 0) -
+                        parseFloat(selectedInvoice.deduction_amount || 0)
                       ).toLocaleString()}{" "}
                       บาท
                     </p>
