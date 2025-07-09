@@ -11,6 +11,10 @@ const InvoiceTable = ({
   grandTotal,
   loading,
   formatNumberWithCommas,
+  deductionDescription,
+  deductionAmount,
+  handleEditDeduction,
+  isViewingExistingInvoice,
 }) => {
   // Debug data on render
   React.useEffect(() => {
@@ -211,14 +215,15 @@ const InvoiceTable = ({
       tableRows.push(totalRow);
     });
 
+    // 🆕 เปลี่ยน GRAND TOTAL เป็น SUB TOTAL
     if (grandTotal !== undefined && grandTotal !== null) {
-      const grandRow = (
-        <tr key="grand-total" className="bg-green-50 grand-total-row">
+      const subTotalRow = (
+        <tr key="sub-total" className="bg-green-50 border-b-2">
           <td
             colSpan={showCostProfit ? 10 : 8}
             className="px-2 py-2 text-right font-bold text-green-700"
           >
-            GRAND TOTAL
+            SUB TOTAL
           </td>
           <td
             colSpan={2}
@@ -228,7 +233,32 @@ const InvoiceTable = ({
           </td>
         </tr>
       );
-      tableRows.push(grandRow);
+      tableRows.push(subTotalRow);
+
+      // 🆕 เพิ่มแถว Deduction (แสดงเฉพาะเมื่อดู Invoice ที่มีอยู่แล้ว)
+      if (isViewingExistingInvoice) {
+        const deductionRow = (
+          <tr key="deduction" className="bg-red-50 border-b">
+            <td
+              colSpan={showCostProfit ? 10 : 8}
+              className="px-2 py-2 text-right font-bold text-red-600 cursor-pointer"
+              onClick={() => handleEditDeduction("description")}
+              title="คลิกเพื่อแก้ไขรายละเอียด"
+            >
+              {deductionDescription || "Service Fee"}
+            </td>
+            <td
+              colSpan={2}
+              className="px-2 py-2 font-bold text-red-600 text-right cursor-pointer"
+              onClick={() => handleEditDeduction("amount")}
+              title="คลิกเพื่อแก้ไขจำนวนเงิน"
+            >
+              -{formatNumberWithCommas(deductionAmount || 0)}
+            </td>
+          </tr>
+        );
+        tableRows.push(deductionRow);
+      }
     }
 
     return tableRows;
