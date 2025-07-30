@@ -94,6 +94,7 @@ const Report = () => {
     );
   }, [selectedTransferIds, transferBookings]);
 
+  // แก้ไขฟังก์ชัน fetchReportData ในไฟล์ Report.jsx
   const fetchReportData = async () => {
     setLoading(true);
     setError(null);
@@ -108,49 +109,49 @@ const Report = () => {
       let allTourBookings = [];
       let allTransferBookings = [];
 
-      // ดึงข้อมูลจาก Agent filters
+      // ดึงข้อมูลจาก Agent filters - แก้ไขตรงนี้
       if (selectedAgents.length > 0) {
         for (const agent of selectedAgents) {
           const { data: tourData } = await supabase
             .from("tour_bookings")
             .select(
               `
-              *,
-              orders!inner (
-                first_name,
-                last_name,
-                agent_name,
-                reference_id,
-                pax_adt,
-                pax_chd,
-                pax_inf
-              )
-            `
+            *,
+            orders!inner (
+              first_name,
+              last_name,
+              agent_name,
+              reference_id,
+              pax_adt,
+              pax_chd,
+              pax_inf
+            )
+          `
             )
             .gte("tour_date", startDate)
             .lte("tour_date", endDate)
-            .eq("orders.agent_name", agent)
+            .ilike("orders.agent_name", agent) // เปลี่ยนจาก .eq เป็น .ilike
             .order("tour_date", { ascending: true });
 
           const { data: transferData } = await supabase
             .from("transfer_bookings")
             .select(
               `
-              *,
-              orders!inner (
-                first_name,
-                last_name,
-                agent_name,
-                reference_id,
-                pax_adt,
-                pax_chd,
-                pax_inf
-              )
-            `
+            *,
+            orders!inner (
+              first_name,
+              last_name,
+              agent_name,
+              reference_id,
+              pax_adt,
+              pax_chd,
+              pax_inf
+            )
+          `
             )
             .gte("transfer_date", startDate)
             .lte("transfer_date", endDate)
-            .eq("orders.agent_name", agent)
+            .ilike("orders.agent_name", agent) // เปลี่ยนจาก .eq เป็น .ilike
             .order("transfer_date", { ascending: true });
 
           if (tourData) allTourBookings = [...allTourBookings, ...tourData];
@@ -159,56 +160,56 @@ const Report = () => {
         }
       }
 
-      // ดึงข้อมูลจาก Tour Recipient filters
+      // ดึงข้อมูลจาก Tour Recipient filters - แก้ไขตรงนี้
       if (selectedTourRecipients.length > 0) {
         for (const recipient of selectedTourRecipients) {
           const { data: tourData } = await supabase
             .from("tour_bookings")
             .select(
               `
-              *,
-              orders (
-                first_name,
-                last_name,
-                agent_name,
-                reference_id,
-                pax_adt,
-                pax_chd,
-                pax_inf
-              )
-            `
+            *,
+            orders (
+              first_name,
+              last_name,
+              agent_name,
+              reference_id,
+              pax_adt,
+              pax_chd,
+              pax_inf
+            )
+          `
             )
             .gte("tour_date", startDate)
             .lte("tour_date", endDate)
-            .eq("send_to", recipient)
+            .ilike("send_to", recipient) // เปลี่ยนจาก .eq เป็น .ilike
             .order("tour_date", { ascending: true });
 
           if (tourData) allTourBookings = [...allTourBookings, ...tourData];
         }
       }
 
-      // ดึงข้อมูลจาก Transfer Recipient filters
+      // ดึงข้อมูลจาก Transfer Recipient filters - แก้ไขตรงนี้
       if (selectedTransferRecipients.length > 0) {
         for (const recipient of selectedTransferRecipients) {
           const { data: transferData } = await supabase
             .from("transfer_bookings")
             .select(
               `
-              *,
-              orders (
-                first_name,
-                last_name,
-                agent_name,
-                reference_id,
-                pax_adt,
-                pax_chd,
-                pax_inf
-              )
-            `
+            *,
+            orders (
+              first_name,
+              last_name,
+              agent_name,
+              reference_id,
+              pax_adt,
+              pax_chd,
+              pax_inf
+            )
+          `
             )
             .gte("transfer_date", startDate)
             .lte("transfer_date", endDate)
-            .eq("send_to", recipient)
+            .ilike("send_to", recipient) // เปลี่ยนจาก .eq เป็น .ilike
             .order("transfer_date", { ascending: true });
 
           if (transferData)
@@ -470,6 +471,7 @@ const Report = () => {
     }
   };
 
+  // แก้ไขฟังก์ชัน fetchAllDataForMonth ในไฟล์ Report.jsx (ถ้ามี)
   const fetchAllDataForMonth = async () => {
     setLoading(true);
     setError(null);
@@ -481,22 +483,22 @@ const Report = () => {
       );
       const endDate = format(endOfMonth(new Date(selectedMonth)), "yyyy-MM-dd");
 
-      // ดึงข้อมูลทั้งหมดไม่มีเงื่อนไข
+      // ดึงข้อมูลทั้งหมดไม่มีเงื่อนไข (ไม่ต้องแก้ส่วนนี้เพราะไม่มีการกรองด้วย text)
       const { data: tourData, error: tourError } = await supabase
         .from("tour_bookings")
         .select(
           `
-        *,
-        orders (
-          first_name,
-          last_name,
-          agent_name,
-          reference_id,
-          pax_adt,
-          pax_chd,
-          pax_inf
-        )
-      `
+      *,
+      orders (
+        first_name,
+        last_name,
+        agent_name,
+        reference_id,
+        pax_adt,
+        pax_chd,
+        pax_inf
+      )
+    `
         )
         .gte("tour_date", startDate)
         .lte("tour_date", endDate)
@@ -506,17 +508,17 @@ const Report = () => {
         .from("transfer_bookings")
         .select(
           `
-        *,
-        orders (
-          first_name,
-          last_name,
-          agent_name,
-          reference_id,
-          pax_adt,
-          pax_chd,
-          pax_inf
-        )
-      `
+      *,
+      orders (
+        first_name,
+        last_name,
+        agent_name,
+        reference_id,
+        pax_adt,
+        pax_chd,
+        pax_inf
+      )
+    `
         )
         .gte("transfer_date", startDate)
         .lte("transfer_date", endDate)

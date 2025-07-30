@@ -38,7 +38,7 @@ const ViewPayment = () => {
   const recipientOptions =
     selectedType === "tour" ? tourRecipients : transferRecipients;
 
-  // โหลดข้อมูล bookings
+  // แก้ไขฟังก์ชัน fetchBookings ในไฟล์ ViewPayment.jsx
   const fetchBookings = async (pageNumber = 1) => {
     if (!selectedRecipient) return;
 
@@ -50,30 +50,30 @@ const ViewPayment = () => {
         selectedType === "tour" ? "tour_bookings" : "transfer_bookings";
       const dateField = selectedType === "tour" ? "tour_date" : "transfer_date";
 
-      // นับจำนวนทั้งหมดก่อน
+      // นับจำนวนทั้งหมดก่อน - แก้ไขตรงนี้
       const { count, error: countError } = await supabase
         .from(table)
         .select("*", { count: "exact", head: true })
-        .eq("send_to", selectedRecipient)
+        .ilike("send_to", selectedRecipient) // เปลี่ยนจาก .eq เป็น .ilike
         .gte(dateField, startDate)
         .lte(dateField, endDate);
 
       if (countError) throw countError;
 
-      // Query bookings with order information และ pagination
+      // Query bookings with order information และ pagination - แก้ไขตรงนี้
       const { data, error: queryError } = await supabase
         .from(table)
         .select(
           `
-          *,
-          orders (
-            first_name,
-            last_name,
-            reference_id
-          )
-        `
+        *,
+        orders (
+          first_name,
+          last_name,
+          reference_id
         )
-        .eq("send_to", selectedRecipient)
+      `
+        )
+        .ilike("send_to", selectedRecipient) // เปลี่ยนจาก .eq เป็น .ilike
         .gte(dateField, startDate)
         .lte(dateField, endDate)
         .order(dateField, { ascending: false })
