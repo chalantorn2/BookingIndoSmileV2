@@ -24,8 +24,7 @@ const InvoiceStatusModal = ({
   isOpen,
   onClose,
   onInvoiceSelect,
-  grandTotal = 0,
-  deductionAmount = 0,
+  allPaymentsData = [],
 }) => {
   const { showSuccess, showError, showInfo } = useNotification();
   const showAlert = useAlertDialogContext();
@@ -436,6 +435,27 @@ const InvoiceStatusModal = ({
 
   if (!isOpen) return null;
 
+  const calculateRealTimeTotal = (invoice, allPaymentsData) => {
+    if (!invoice?.payment_ids || !allPaymentsData) return 0;
+
+    let total = 0;
+    const relatedPayments = allPaymentsData.filter((p) =>
+      invoice.payment_ids.includes(p.id)
+    );
+
+    relatedPayments.forEach((payment) => {
+      if (payment.bookings && Array.isArray(payment.bookings)) {
+        payment.bookings.forEach((booking) => {
+          const price = parseFloat(booking.sellingPrice) || 0;
+          const quantity = parseInt(booking.quantity) || 0;
+          total += price * quantity;
+        });
+      }
+    });
+
+    return total;
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-auto modal-backdrop flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
@@ -507,10 +527,22 @@ const InvoiceStatusModal = ({
                       <span className="font-medium">วันที่:</span>{" "}
                       {selectedInvoice.invoice_date}
                     </p>
-                    <p>
-                      <span className="font-medium">ยอดรวม:</span>{" "}
-                      {(grandTotal - deductionAmount).toLocaleString()} บาท
-                    </p>
+                    {selectedInvoice &&
+                      (() => {
+                        const realTimeTotal = calculateRealTimeTotal(
+                          selectedInvoice,
+                          allPaymentsData
+                        );
+                        const deduction = parseFloat(
+                          selectedInvoice.deduction_amount || 0
+                        );
+                        return (
+                          <p>
+                            <span className="font-medium">ยอดรวม:</span>{" "}
+                            {(realTimeTotal - deduction).toLocaleString()} บาท
+                          </p>
+                        );
+                      })()}
                   </div>
 
                   {/* Status Toggle */}

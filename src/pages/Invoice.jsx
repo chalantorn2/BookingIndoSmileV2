@@ -1662,8 +1662,7 @@ const Invoice = () => {
         <InvoiceStatusModal
           isOpen={isStatusModalOpen}
           onClose={() => setIsStatusModalOpen(false)}
-          grandTotal={grandTotal} // เพิ่มบรรทัดนี้
-          deductionAmount={deductionAmount} // เพิ่มบรรทัดนี้
+          allPaymentsData={allPaymentsData} // เพิ่มบรรทัดนี้
           onInvoiceSelect={(invoice) => {
             console.log("Selected invoice:", invoice);
           }}
