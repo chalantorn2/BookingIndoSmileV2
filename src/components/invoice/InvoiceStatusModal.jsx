@@ -20,7 +20,13 @@ import {
   fetchAllInvoices,
 } from "../../services/invoiceService";
 
-const InvoiceStatusModal = ({ isOpen, onClose, onInvoiceSelect }) => {
+const InvoiceStatusModal = ({
+  isOpen,
+  onClose,
+  onInvoiceSelect,
+  grandTotal = 0,
+  deductionAmount = 0,
+}) => {
   const { showSuccess, showError, showInfo } = useNotification();
   const showAlert = useAlertDialogContext();
 
@@ -503,11 +509,7 @@ const InvoiceStatusModal = ({ isOpen, onClose, onInvoiceSelect }) => {
                     </p>
                     <p>
                       <span className="font-medium">ยอดรวม:</span>{" "}
-                      {(
-                        parseFloat(selectedInvoice.total_amount || 0) -
-                        parseFloat(selectedInvoice.deduction_amount || 0)
-                      ).toLocaleString()}{" "}
-                      บาท
+                      {(grandTotal - deductionAmount).toLocaleString()} บาท
                     </p>
                   </div>
 
