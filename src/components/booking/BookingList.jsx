@@ -436,6 +436,22 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           </div>
                         )}
                       </div>
+                      <div className="flex flex-wrap gap-x-4 text-xs text-gray-600 mb-2">
+                        <div className="flex items-center">
+                          <FileText size={14} className="mr-1 flex-shrink-0" />
+                          <div
+                            className="w-xl text-balance"
+                            style={{
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              maxWidth: "500px",
+                            }}
+                          >
+                            <b>{preventTextWrap("รายละเอียด:")}</b>{" "}
+                            {booking.transfer_detail || "-"}
+                          </div>
+                        </div>
+                      </div>
                     </>
                   )}
                 </div>
