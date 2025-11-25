@@ -31,7 +31,7 @@ const InvoiceTable = ({
             colSpan={showCostProfit ? 12 : 10}
             className="text-center text-red-500 py-4"
           >
-            ไม่มีรายการที่เลือก
+            No items selected
           </td>
         </tr>
       );
@@ -243,7 +243,7 @@ const InvoiceTable = ({
               colSpan={showCostProfit ? 10 : 8}
               className="px-2 py-2 text-right font-bold text-red-600 cursor-pointer"
               onClick={() => handleEditDeduction("description")}
-              title="คลิกเพื่อแก้ไขรายละเอียด"
+              title="Click to edit description"
             >
               {deductionDescription || "Service Fee"}
             </td>
@@ -251,7 +251,7 @@ const InvoiceTable = ({
               colSpan={2}
               className="px-2 py-2 font-bold text-red-600 text-right cursor-pointer"
               onClick={() => handleEditDeduction("amount")}
-              title="คลิกเพื่อแก้ไขจำนวนเงิน"
+              title="Click to edit amount"
             >
               -{formatNumberWithCommas(deductionAmount || 0)}
             </td>
@@ -300,7 +300,7 @@ const InvoiceTable = ({
                 className="py-4 text-center"
               >
                 <div className="inline-block w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <p className="mt-2 text-sm text-gray-700">กำลังโหลดข้อมูล...</p>
+                <p className="mt-2 text-sm text-gray-700">Loading data...</p>
               </td>
             </tr>
           ) : (

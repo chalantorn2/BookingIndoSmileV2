@@ -32,7 +32,7 @@ const VoucherTable = ({
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+          <p className="mt-2 text-gray-600">Loading data...</p>
         </div>
       ) : error ? (
         <div className="text-center py-8 text-red-500">
@@ -40,7 +40,7 @@ const VoucherTable = ({
         </div>
       ) : bookings.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <p>ไม่พบข้อมูลการจอง</p>
+          <p>No booking data found</p>
         </div>
       ) : (
         <table className="min-w-full divide-y divide-gray-200">
@@ -51,7 +51,7 @@ const VoucherTable = ({
                 onClick={() => handleSort("created_at")}
               >
                 <div className="flex items-center">
-                  <span>ลำดับ</span>
+                  <span>No.</span>
                   {sortField === "created_at" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? (
@@ -68,7 +68,7 @@ const VoucherTable = ({
                 onClick={() => handleSort("recipient")}
               >
                 <div className="flex items-center">
-                  <span>ส่งใคร</span>
+                  <span>Send To</span>
                   {sortField === "recipient" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? (
@@ -85,7 +85,7 @@ const VoucherTable = ({
                 onClick={() => handleSort("customer")}
               >
                 <div className="flex items-center">
-                  <span>ชื่อลูกค้า</span>
+                  <span>Customer Name</span>
                   {sortField === "customer" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? (
@@ -102,7 +102,7 @@ const VoucherTable = ({
                 onClick={() => handleSort("booking_type")}
               >
                 <div className="flex items-center">
-                  <span>ประเภท</span>
+                  <span>Type</span>
                   {sortField === "booking_type" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? (
@@ -119,7 +119,7 @@ const VoucherTable = ({
                 onClick={() => handleSort("booking_date")}
               >
                 <div className="flex items-center">
-                  <span>วันที่</span>
+                  <span>Date</span>
                   {sortField === "booking_date" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? (
@@ -136,7 +136,7 @@ const VoucherTable = ({
                 onClick={() => handleSort("voucher_status")}
               >
                 <div className="flex items-center">
-                  <span>สถานะ Voucher</span>
+                  <span>Voucher Status</span>
                   {sortField === "voucher_status" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? (
@@ -149,7 +149,7 @@ const VoucherTable = ({
                 </div>
               </th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                จัดการ Voucher
+                Manage Voucher
               </th>
             </tr>
           </thead>
@@ -197,12 +197,12 @@ const VoucherTable = ({
                       {booking.voucher_status === "created" ? (
                         <>
                           <CheckCircle size={14} className="mr-1" />
-                          สร้างแล้ว
+                          Created
                         </>
                       ) : (
                         <>
                           <XCircle size={14} className="mr-1" />
-                          ยังไม่สร้าง
+                          Not Created
                         </>
                       )}
                     </span>
@@ -228,12 +228,12 @@ const VoucherTable = ({
                     {booking.voucher_status === "created" ? (
                       <>
                         <Edit size={14} className="mr-1" />
-                        แก้ไข
+                        Edit
                       </>
                     ) : (
                       <>
                         <Plus size={14} className="mr-1" />
-                        สร้าง
+                        Create
                       </>
                     )}
                   </button>

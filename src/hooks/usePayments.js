@@ -80,14 +80,14 @@ const usePayments = () => {
       };
     } catch (error) {
       console.error("Error loading order bookings:", error);
-      setError("ไม่สามารถโหลดข้อมูลการจองได้");
+      setError("Unable to load booking data");
       return { tourBookings: [], transferBookings: [] };
     } finally {
       setLoading(false);
     }
   };
 
-  // ในฟังก์ชัน addBookingToPayment ของไฟล์ usePayments.js
+  // Add booking to payment calculation
 
   const addBookingToPayment = (booking, type) => {
     const uniqueId = `${booking.id}-${Date.now()}`;
@@ -103,13 +103,13 @@ const usePayments = () => {
         (updatedBookings[existingIndex].chosenCount || 0) + 1;
       setSelectedBookings(updatedBookings);
     } else {
-      // คำนวณจำนวน pax ทั้งหมด
+      // Calculate total pax count
       const adtCount = parseInt(booking.pax_adt || 0);
       const chdCount = parseInt(booking.pax_chd || 0);
       const infCount = parseInt(booking.pax_inf || 0);
       const totalPax = adtCount + chdCount + infCount;
 
-      // สร้าง pax format แบบ "ADT+CHD+INF"
+      // Create pax format as "ADT+CHD+INF"
       let paxFormat = [];
       if (adtCount > 0) paxFormat.push(adtCount);
       if (chdCount > 0) paxFormat.push(chdCount);
@@ -118,8 +118,8 @@ const usePayments = () => {
 
       // Prepare booking data based on type
       const bookingData = {
-        id: uniqueId, // ใช้ ID ที่ unique
-        dbKey: booking.id, // เก็บ ID จากฐานข้อมูลไว้
+        id: uniqueId, // Use unique ID
+        dbKey: booking.id, // Store database ID
         type: type,
         date: type === "tour" ? booking.tour_date : booking.transfer_date,
         detail: type === "tour" ? booking.tour_detail : booking.transfer_detail,
@@ -185,24 +185,24 @@ const usePayments = () => {
   };
 
   const handlePaymentEdit = async (paymentData, existingPayment) => {
-    // เมื่อแก้ไข Payment ไม่ต้องเปลี่ยน invoiced แล้ว
-    // แค่บันทึกข้อมูลปกติ
+    // When editing Payment, no need to change invoiced status
+    // Just save data normally
     return await savePayment(paymentData);
   };
 
   const savePaymentData = async (order) => {
     if (!order) {
-      throw new Error("กรุณาเลือก Order ก่อนบันทึกข้อมูล");
+      throw new Error("Please select an Order before saving data");
     }
 
     if (selectedBookings.length === 0) {
-      throw new Error("กรุณาเลือก Booking อย่างน้อย 1 รายการ");
+      throw new Error("Please select at least 1 booking");
     }
 
     setLoading(true);
 
     const formatPaxForSave = (order) => {
-      // โค้ดเดิม...
+      // Format pax for saving
       if (!order) return "0";
 
       const adtCount = parseInt(order.pax_adt || 0);
@@ -221,7 +221,7 @@ const usePayments = () => {
       const paymentID = `P_${order.reference_id || order.id}`;
       const totals = calculateTotals();
 
-      // เตรียมข้อมูลสำหรับบันทึก
+      // Prepare data for saving
       const paymentData = {
         payment_id: paymentID,
         order_id: order.id,
@@ -235,8 +235,8 @@ const usePayments = () => {
         total_profit: totals.totalProfit,
       };
 
-      // ดึงข้อมูล Payment เดิม (ถ้ามี) โดยตรงจาก supabase แทนที่จะใช้ข้อมูลเดิม
-      // เพื่อให้แน่ใจว่าได้ข้อมูลล่าสุดเสมอ
+      // Fetch existing Payment data (if any) directly from supabase instead of using old data
+      // To ensure we always have the latest data
       const { data: existingPayment } = await supabase
         .from("payments")
         .select("id, invoiced")
@@ -246,15 +246,13 @@ const usePayments = () => {
       const result = await handlePaymentEdit(paymentData, existingPayment);
 
       if (!result.success) {
-        throw new Error(result.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        throw new Error(result.error || "Error occurred while saving data");
       }
 
-      // **เพิ่มส่วนนี้**
-      // อัพเดท Invoice ที่เกี่ยวข้องเมื่อ Payment เปลี่ยน
+      // Update related Invoices when Payment changes
       if (existingPayment?.id) {
         await updateRelatedInvoices(existingPayment.id);
       }
-      // **จบส่วนที่เพิ่ม**
 
       return { success: true, paymentID };
     } catch (error) {
@@ -266,14 +264,14 @@ const usePayments = () => {
     }
   };
 
-  // ฟังก์ชันอัพเดท Invoice ที่เกี่ยวข้องเมื่อ Payment เปลี่ยน
+  // Function to update related Invoices when Payment changes
   const updateRelatedInvoices = async (paymentId) => {
     try {
-      // Import ฟังก์ชันที่ต้องการ
+      // Import required functions
       const { findInvoicesByPaymentId, recalculateInvoiceTotals } =
         await import("../services/invoiceService");
 
-      // หา Invoice ที่เกี่ยวข้องกับ Payment นี้
+      // Find Invoices related to this Payment
       const { data: relatedInvoices, error } = await findInvoicesByPaymentId(
         paymentId
       );
@@ -283,7 +281,7 @@ const usePayments = () => {
         return;
       }
 
-      // อัพเดท Invoice ทุกตัวที่เกี่ยวข้อง
+      // Update all related Invoices
       for (const invoice of relatedInvoices) {
         const { success, error: recalcError } = await recalculateInvoiceTotals(
           invoice.id

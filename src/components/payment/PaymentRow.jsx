@@ -107,7 +107,7 @@ const PaymentRow = ({ booking, index, onRemove, onChange }) => {
           value={booking.hotel || ""}
           onChange={(e) => onChange(index, "hotel", e.target.value)}
           rows="2"
-          placeholder={isTour ? "โรงแรม" : "-"}
+          placeholder={isTour ? "Hotel" : "-"}
         />
       </td>
       <td className="px-3 py-2">
@@ -116,7 +116,7 @@ const PaymentRow = ({ booking, index, onRemove, onChange }) => {
           value={booking.detail || ""}
           onChange={(e) => onChange(index, "detail", e.target.value)}
           rows="2"
-          placeholder="รายละเอียด"
+          placeholder="Details"
         />
       </td>
       <td className="px-3 py-2">
@@ -171,10 +171,10 @@ const PaymentRow = ({ booking, index, onRemove, onChange }) => {
           onChange={handleStatusChange}
         >
           <option className="bg-red-600 text-white" value="notPaid">
-            ยังไม่จ่าย
+            Not Paid
           </option>
           <option className="bg-green-600 text-white" value="paid">
-            จ่ายแล้ว
+            Paid
           </option>
         </select>
       </td>

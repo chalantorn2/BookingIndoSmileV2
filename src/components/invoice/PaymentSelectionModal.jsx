@@ -15,7 +15,7 @@ const PaymentSelectionModal = ({
     if (months.length === 0) {
       return (
         <div className="text-yellow-600 bg-yellow-100 p-3 rounded">
-          ไม่พบข้อมูล Payment
+          No Payment data found
         </div>
       );
     }
@@ -80,7 +80,7 @@ const PaymentSelectionModal = ({
       >
         <div className="flex items-center justify-between mb-4">
           <h5 className="text-lg font-bold">
-            เลือก Payments ที่ต้องการสร้าง Invoice
+            Select Payments to Create Invoice
           </h5>
           <button
             className="text-gray-500 hover:text-gray-700"
@@ -97,13 +97,13 @@ const PaymentSelectionModal = ({
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
             onClick={() => setIsSelectModalOpen(false)}
           >
-            ปิด
+            Close
           </button>
           <button
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             onClick={handleConfirmSelection}
           >
-            ยืนยันการเลือก
+            Confirm Selection
           </button>
         </div>
       </div>

@@ -57,7 +57,7 @@ const Payment = () => {
   // Apply date filter to fetch orders
   const handleApplyFilter = async () => {
     if (!startDate || !endDate) {
-      setError("กรุณาระบุวันที่เริ่มต้นและวันที่สิ้นสุด");
+      setError("Please specify start date and end date");
       return;
     }
 
@@ -68,7 +68,7 @@ const Payment = () => {
       await fetchOrdersByDateRange(startDate, endDate);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      setError("เกิดข้อผิดพลาดในการดึงข้อมูล Order");
+      setError("Error occurred while fetching Order data");
     } finally {
       setLoading(false);
     }
@@ -176,18 +176,18 @@ const Payment = () => {
   // Save payment data
   const handleSavePayment = async () => {
     if (!selectedOrder) {
-      setError("กรุณาเลือก Order ก่อนบันทึกข้อมูล");
+      setError("Please select an Order before saving data");
       return;
     }
 
     try {
       const result = await savePaymentData(selectedOrder);
       if (result.success) {
-        showSuccess(`บันทึกข้อมูลสำเร็จ! Payment ID: ${result.paymentID}`);
+        showSuccess(`Data saved successfully! Payment ID: ${result.paymentID}`);
       }
     } catch (error) {
       console.error("Error saving payment:", error);
-      setError(`เกิดข้อผิดพลาดในการบันทึกข้อมูล: ${error.message}`);
+      setError(`Error occurred while saving data: ${error.message}`);
     }
   };
 
@@ -232,11 +232,11 @@ const Payment = () => {
     if (existingPayment && existingPayment.invoiced) {
       // ถ้า Payment นี้ได้ออก Invoice ไปแล้ว ให้ถามยืนยัน
       const confirmed = await showAlert({
-        title: "ยืนยันการแก้ไข Payment",
+        title: "Confirm Payment Edit",
         description:
-          "Payment นี้ได้นำไปสร้าง Invoice แล้ว คุณต้องการนำไปสร้าง Invoice ใหม่หรือไม่?",
-        confirmText: "ใช่ นำไปสร้าง Invoice ใหม่",
-        cancelText: "ไม่ ยังคงใช้ Invoice เดิม",
+          "This Payment has been used to create an Invoice. Do you want to create a new Invoice?",
+        confirmText: "Yes, Create New Invoice",
+        cancelText: "No, Keep Existing Invoice",
         actionVariant: "warning",
       });
 
@@ -256,9 +256,9 @@ const Payment = () => {
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-50">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">กรอกข้อมูลการเงิน</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Payment Information</h1>
         <p className="text-gray-600">
-          จัดการการคิดเงินสำหรับ Orders และ Booking
+          Manage payments for Orders and Bookings
         </p>
       </div>
 
@@ -328,7 +328,7 @@ const Payment = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      กำลังโหลด...
+                      Loading...
                     </span>
                   ) : (
                     <>
@@ -351,10 +351,10 @@ const Payment = () => {
               >
                 <option value="">
                   {loading
-                    ? "กำลังโหลดข้อมูล..."
+                    ? "Loading data..."
                     : filteredOrders.length === 0
-                    ? "กรุณากดปุ่ม Filter เพื่อแสดงรายการ Order"
-                    : "เลือก Order"}
+                    ? "Please click Filter button to show Order list"
+                    : "Select Order"}
                 </option>
                 {filteredOrders.map((order) => (
                   <option key={order.id} value={order.id}>
@@ -390,7 +390,7 @@ const Payment = () => {
             </div>
             <p className="text-white text-opacity-90 mt-1">
               {selectedOrder.first_name} {selectedOrder.last_name} |{" "}
-              {formatPax(selectedOrder)} คน
+              {formatPax(selectedOrder)} people
             </p>
           </div>
 
@@ -398,7 +398,7 @@ const Payment = () => {
           {paymentLoading ? (
             <div className="text-center py-6">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-              <p className="mt-2 text-gray-600">กำลังโหลดข้อมูลการจอง...</p>
+              <p className="mt-2 text-gray-600">Loading booking data...</p>
             </div>
           ) : (
             <div className="p-4">
@@ -413,7 +413,7 @@ const Payment = () => {
                   </h3>
                   {tourBookings.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
-                      ไม่มีการจอง Tour
+                      No Tour bookings
                     </p>
                   ) : (
                     <div className="space-y-3">
@@ -439,7 +439,7 @@ const Payment = () => {
                   </h3>
                   {transferBookings.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
-                      ไม่มีการจอง Transfer
+                      No Transfer bookings
                     </p>
                   ) : (
                     <div className="space-y-3">
@@ -566,19 +566,19 @@ const Payment = () => {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-200">
-                <p className="text-gray-600 font-medium">รวมต้นทุนทั้งหมด</p>
+                <p className="text-gray-600 font-medium">Total Cost</p>
                 <p className="text-3xl font-bold text-blue-600">
                   {formatNumber(paymentTotals.totalCost)}
                 </p>
               </div>
               <div className="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-200">
-                <p className="text-gray-600 font-medium">รวมราคาขายทั้งหมด</p>
+                <p className="text-gray-600 font-medium">Total Selling Price</p>
                 <p className="text-3xl font-bold text-indigo-600">
                   {formatNumber(paymentTotals.totalSellingPrice)}
                 </p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg text-center border border-green-200">
-                <p className="text-gray-600 font-medium">กำไรรวมทั้งหมด</p>
+                <p className="text-gray-600 font-medium">Total Profit</p>
                 <p className="text-3xl font-bold text-green-600">
                   {formatNumber(paymentTotals.totalProfit)}
                 </p>
@@ -612,12 +612,12 @@ const Payment = () => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    กำลังบันทึก...
+                    Saving...
                   </span>
                 ) : (
                   <>
                     <Save size={18} className="mr-2" />
-                    บันทึกข้อมูล
+                    Save Data
                   </>
                 )}
               </button>

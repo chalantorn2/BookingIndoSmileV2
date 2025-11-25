@@ -16,7 +16,7 @@ const SummarySection = ({
       <div className="flex flex-wrap text-center">
         <div className="w-full md:w-1/3 mb-4">
           <p>
-            <strong>รวมต้นทุนทั้งหมด:</strong>
+            <strong>Total Cost:</strong>
             <br />
             <span className="text-2xl font-bold text-blue-500">
               {formatNumberWithCommas(totalCost)}
@@ -25,7 +25,7 @@ const SummarySection = ({
         </div>
         <div className="w-full md:w-1/3 mb-4">
           <p>
-            <strong>รวมราคาขายทั้งหมด:</strong>
+            <strong>Total Selling Price:</strong>
             <br />
             <span className="text-2xl font-bold text-blue-700">
               {formatNumberWithCommas(totalSellingPrice)}
@@ -34,7 +34,7 @@ const SummarySection = ({
         </div>
         <div className="w-full md:w-1/3 mb-4">
           <p>
-            <strong>กำไรรวมทั้งหมด:</strong>
+            <strong>Total Profit:</strong>
             <br />
             <span className="text-2xl font-bold text-green-600">
               {formatNumberWithCommas(totalProfit)}

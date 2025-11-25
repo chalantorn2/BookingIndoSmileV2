@@ -20,11 +20,11 @@ const Information = () => {
 
   const [categories, setCategories] = useState([
     { id: "agent", label: "Agent" },
-    { id: "tour_recipient", label: "ส่งใคร Tour" },
-    { id: "transfer_recipient", label: "ส่งใคร Transfer" },
-    { id: "tour_type", label: "ประเภท Tour" },
-    { id: "transfer_type", label: "ประเภท Transfer" },
-    { id: "place", label: "สถานที่" },
+    { id: "tour_recipient", label: "Tour Recipient" },
+    { id: "transfer_recipient", label: "Transfer Recipient" },
+    { id: "tour_type", label: "Tour Type" },
+    { id: "transfer_type", label: "Transfer Type" },
+    { id: "place", label: "Place" },
   ]);
 
   const [selectedCategory, setSelectedCategory] = useState("agent");
@@ -87,7 +87,7 @@ const Information = () => {
       if (error) {
         console.error(`❌ Error loading ${selectedCategory} data:`, error);
         setError(error);
-        showError(`ไม่สามารถโหลดข้อมูลได้: ${error}`);
+        showError(`Cannot load data: ${error}`);
       } else {
         setInformationData(data);
         setTotalItems(total);
@@ -96,7 +96,7 @@ const Information = () => {
     } catch (err) {
       console.error(`💥 Exception in loadInformationData:`, err);
       setError(err.message);
-      showError(`เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}`);
+      showError(`Error loading data: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ const Information = () => {
 
   const handleSaveEdit = async () => {
     if (!editingItem.value.trim()) {
-      showInfo("กรุณากรอกข้อมูลให้ครบถ้วน");
+      showInfo("Please fill in all required fields");
       return;
     }
 
@@ -162,12 +162,12 @@ const Information = () => {
         await loadInformationData();
         refreshInformation();
         setEditingItem(null);
-        showSuccess("บันทึกการแก้ไขเรียบร้อย");
+        showSuccess("Changes saved successfully");
       } else {
-        showError(`ไม่สามารถบันทึกข้อมูลได้: ${result.error}`);
+        showError(`Cannot save data: ${result.error}`);
       }
     } catch (err) {
-      showError(`เกิดข้อผิดพลาดในการบันทึก: ${err.message}`);
+      showError(`Error saving: ${err.message}`);
     }
   };
 
@@ -183,7 +183,7 @@ const Information = () => {
 
   const handleSaveNew = async () => {
     if (!newItem.value.trim()) {
-      showInfo("กรุณากรอกข้อมูลให้ครบถ้วน");
+      showInfo("Please fill in all required fields");
       return;
     }
 
@@ -206,21 +206,21 @@ const Information = () => {
         refreshInformation();
         setAddingNew(false);
         setNewItem({ value: "", description: "", phone: "" });
-        showSuccess("เพิ่มข้อมูลใหม่เรียบร้อย");
+        showSuccess("New data added successfully");
       } else {
-        showError(`ไม่สามารถเพิ่มข้อมูลได้: ${result.error}`);
+        showError(`Cannot add data: ${result.error}`);
       }
     } catch (err) {
-      showError(`เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ${err.message}`);
+      showError(`Error adding data: ${err.message}`);
     }
   };
 
   const handleDeactivate = async (id) => {
     const confirmed = await showAlert({
-      title: "ยืนยันการยกเลิกการใช้งาน",
-      description: "คุณต้องการยกเลิกการใช้งานข้อมูลนี้ใช่หรือไม่?",
-      confirmText: "ยืนยันการลบ",
-      cancelText: "ยกเลิก",
+      title: "Confirm Deactivation",
+      description: "Are you sure you want to deactivate this data?",
+      confirmText: "Confirm Delete",
+      cancelText: "Cancel",
       actionVariant: "destructive",
     });
 
@@ -231,14 +231,14 @@ const Information = () => {
         const result = await deactivateInformation(id);
 
         if (result.success) {
-          showSuccess("ยกเลิกการใช้งานข้อมูลเรียบร้อย");
+          showSuccess("Data deactivated successfully");
           await loadInformationData();
           refreshInformation();
         } else {
-          showError(`ไม่สามารถยกเลิกการใช้งานข้อมูลได้: ${result.error}`);
+          showError(`Cannot deactivate data: ${result.error}`);
         }
       } catch (err) {
-        showError(`เกิดข้อผิดพลาดในการยกเลิก: ${err.message}`);
+        showError(`Error deactivating: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -246,14 +246,14 @@ const Information = () => {
   };
 
   const handleMigrationComplete = () => {
-    showSuccess("รวมข้อมูลเรียบร้อยแล้ว");
+    showSuccess("Data merged successfully");
     loadInformationData();
     refreshInformation();
   };
 
   const handleOpenMigration = () => {
     if (totalItems < 2) {
-      showInfo("ต้องมีข้อมูลอย่างน้อย 2 รายการเพื่อทำการ Migration");
+      showInfo("At least 2 records are required for migration");
       return;
     }
     setIsMigrationOpen(true);
@@ -265,14 +265,14 @@ const Information = () => {
         <h1 className="text-3xl font-bold text-gray-800">
           Information Management
         </h1>
-        <p className="text-gray-600">จัดการข้อมูลที่ใช้ในระบบ</p>
+        <p className="text-gray-600">Manage system data</p>
       </div>
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="flex flex-col md:flex-row">
           {/* Sidebar Categories */}
           <div className="w-full md:w-1/4 bg-gray-50 p-4 border-r border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">ประเภทข้อมูล</h2>
+            <h2 className="text-lg font-semibold mb-4">Data Type</h2>
             <ul className="space-y-2">
               {categories.map((category) => (
                 <li key={category.id}>
@@ -315,7 +315,7 @@ const Information = () => {
                   disabled={addingNew}
                 >
                   <Plus size={18} className="mr-1" />
-                  เพิ่มข้อมูลใหม่
+                  Add New
                 </button>
               </div>
             </div>
@@ -323,7 +323,7 @@ const Information = () => {
             {/* Search Bar */}
             <SearchBar
               onSearch={handleSearch}
-              placeholder={`ค้นหา${
+              placeholder={`Search ${
                 categories.find((cat) => cat.id === selectedCategory)?.label
               }...`}
               className="mb-4"
@@ -332,7 +332,7 @@ const Information = () => {
             {loading ? (
               <div className="text-center py-6">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-                <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+                <p className="mt-2 text-gray-600">Loading data...</p>
               </div>
             ) : error ? (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -343,7 +343,7 @@ const Information = () => {
                 {/* Form for adding new item */}
                 {addingNew && (
                   <div className="mb-6 bg-blue-50 p-4 rounded-md">
-                    <h3 className="font-semibold mb-2">เพิ่มข้อมูลใหม่</h3>
+                    <h3 className="font-semibold mb-2">Add New Data</h3>
                     <div
                       className={`grid grid-cols-1 ${
                         supportsPhone() ? "md:grid-cols-3" : "md:grid-cols-2"
@@ -351,7 +351,7 @@ const Information = () => {
                     >
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          ค่าข้อมูล <span className="text-red-500">*</span>
+                          Value <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -363,7 +363,7 @@ const Information = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          รายละเอียด
+                          Description
                         </label>
                         <input
                           type="text"
@@ -376,7 +376,7 @@ const Information = () => {
                       {supportsPhone() && (
                         <div>
                           <label className="block text-sm font-medium mb-1">
-                            เบอร์โทร
+                            Phone
                           </label>
                           <input
                             type="text"
@@ -384,7 +384,7 @@ const Information = () => {
                             value={newItem.phone}
                             onChange={(e) => handleInputChange(e, "new")}
                             className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200 focus:border-blue-500"
-                            placeholder="เช่น 081-234-5678"
+                            placeholder="e.g. 081-234-5678"
                           />
                         </div>
                       )}
@@ -394,13 +394,13 @@ const Information = () => {
                         onClick={handleCancelAdd}
                         className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
                       >
-                        ยกเลิก
+                        Cancel
                       </button>
                       <button
                         onClick={handleSaveNew}
                         className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600"
                       >
-                        บันทึก
+                        Save
                       </button>
                     </div>
                   </div>
@@ -412,18 +412,18 @@ const Information = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          ค่าข้อมูล
+                          Value
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          รายละเอียด
+                          Description
                         </th>
                         {supportsPhone() && (
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            เบอร์โทร
+                            Phone
                           </th>
                         )}
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          จัดการ
+                          Actions
                         </th>
                       </tr>
                     </thead>
@@ -435,8 +435,8 @@ const Information = () => {
                             className="px-6 py-4 text-center text-gray-500"
                           >
                             {searchQuery
-                              ? "ไม่พบข้อมูลที่ค้นหา"
-                              : "ไม่พบข้อมูล"}
+                              ? "No data found"
+                              : "No data"}
                           </td>
                         </tr>
                       ) : (
@@ -476,7 +476,7 @@ const Information = () => {
                                         handleInputChange(e, "edit")
                                       }
                                       className="w-full border border-gray-300 rounded-md p-1 focus:ring focus:ring-blue-200 focus:border-blue-500"
-                                      placeholder="เช่น 081-234-5678"
+                                      placeholder="e.g. 081-234-5678"
                                     />
                                   </td>
                                 )}

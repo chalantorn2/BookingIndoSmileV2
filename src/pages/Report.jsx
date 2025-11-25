@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { th } from "date-fns/locale";
 import {
   Download,
   RefreshCcw,
@@ -236,7 +235,7 @@ const Report = () => {
       setSelectedTransferIds(new Set());
     } catch (err) {
       console.error("Error fetching report data:", err);
-      setError("ไม่สามารถโหลดข้อมูลได้");
+      setError("Cannot load data");
       setTourBookings([]);
       setTransferBookings([]);
     } finally {
@@ -288,12 +287,12 @@ const Report = () => {
       const result = await addInformation({
         category,
         value,
-        description: `เพิ่มจากหน้า Report`,
+        description: `Added from Report page`,
         active: true,
       });
       return result.data;
     } catch (error) {
-      throw new Error("ไม่สามารถเพิ่มข้อมูลใหม่ได้");
+      throw new Error("Cannot add new information");
     }
   };
 
@@ -425,7 +424,7 @@ const Report = () => {
         : transferBookings;
 
     if (selectedTours.length === 0 && selectedTransfers.length === 0) {
-      showError("ไม่มีข้อมูลสำหรับ Export");
+      showError("No data to export");
       return;
     }
 
@@ -439,7 +438,7 @@ const Report = () => {
   ) => {
     setIsExporting(true);
     setIsExportModalOpen(false);
-    showInfo("กำลังสร้างไฟล์ Excel กรุณารอสักครู่...");
+    showInfo("Creating Excel file, please wait...");
 
     try {
       // เตรียม selectedFilters object สำหรับ reportService
@@ -465,7 +464,7 @@ const Report = () => {
       }
     } catch (error) {
       console.error("Export error:", error);
-      showError("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
+      showError("Error exporting data");
     } finally {
       setIsExporting(false);
     }
@@ -535,15 +534,14 @@ const Report = () => {
       setSelectedTransferIds(new Set());
 
       showSuccess(
-        `แสดงข้อมูลทั้งหมดในเดือน ${format(
+        `Showing all data for ${format(
           new Date(selectedMonth),
-          "MMMM yyyy",
-          { locale: th }
+          "MMMM yyyy"
         )}`
       );
     } catch (err) {
       console.error("Error fetching all data:", err);
-      setError("ไม่สามารถโหลดข้อมูลได้");
+      setError("Cannot load data");
       setTourBookings([]);
       setTransferBookings([]);
     } finally {
@@ -555,24 +553,24 @@ const Report = () => {
     if (tourBookings.length === 0) {
       return (
         <div className="text-center py-8 text-gray-500">
-          ไม่มีข้อมูล Tour ในช่วงเวลาที่เลือก
+          No Tour data in selected period
         </div>
       );
     }
 
     const columns = [
-      { key: "Date", label: "วันที่" },
+      { key: "Date", label: "Date" },
       { key: "Agent", label: "Agent" },
       { key: "ReferenceID", label: "Reference ID" },
-      { key: "CustomerName", label: "ชื่อลูกค้า" },
-      { key: "Pax", label: "จำนวนคน" },
-      { key: "PickupTime", label: "เวลารับ" },
-      { key: "PickupFrom", label: "รับจาก" }, // ใหม่
-      { key: "DropTo", label: "ส่งที่" }, // ใหม่
-      { key: "Flight", label: "เที่ยวบิน" },
-      { key: "FlightTime", label: "เวลาบิน" },
-      { key: "SendTo", label: "ส่ง" },
-      { key: "Note", label: "หมายเหตุ" },
+      { key: "CustomerName", label: "Customer Name" },
+      { key: "Pax", label: "Pax" },
+      { key: "PickupTime", label: "Pickup Time" },
+      { key: "PickupFrom", label: "Pickup From" }, // ใหม่
+      { key: "DropTo", label: "Drop To" }, // ใหม่
+      { key: "Flight", label: "Flight" },
+      { key: "FlightTime", label: "Flight Time" },
+      { key: "SendTo", label: "Send To" },
+      { key: "Note", label: "Note" },
       { key: "Cost", label: "Cost" },
       { key: "Sell", label: "Sell" },
       { key: "Profit", label: "Profit" },
@@ -596,7 +594,7 @@ const Report = () => {
                 </button>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                ลำดับ
+                No.
               </th>
               {columns.map((col) => (
                 <th
@@ -698,24 +696,24 @@ const Report = () => {
     if (transferBookings.length === 0) {
       return (
         <div className="text-center py-8 text-gray-500">
-          ไม่มีข้อมูล Transfer ในช่วงเวลาที่เลือก
+          No Transfer data in selected period
         </div>
       );
     }
 
     const columns = [
-      { key: "Date", label: "วันที่" },
+      { key: "Date", label: "Date" },
       { key: "Agent", label: "Agent" },
       { key: "ReferenceID", label: "Reference ID" },
-      { key: "CustomerName", label: "ชื่อลูกค้า" },
-      { key: "Pax", label: "จำนวนคน" },
-      { key: "PickupTime", label: "เวลารับ" },
-      { key: "HotelOrPickup", label: "รับจาก" },
-      { key: "DetailsOrDropoff", label: "ส่งที่" },
-      { key: "Flight", label: "เที่ยวบิน" },
-      { key: "FlightTime", label: "เวลาบิน" },
-      { key: "SendTo", label: "ส่ง" },
-      { key: "Note", label: "หมายเหตุ" },
+      { key: "CustomerName", label: "Customer Name" },
+      { key: "Pax", label: "Pax" },
+      { key: "PickupTime", label: "Pickup Time" },
+      { key: "HotelOrPickup", label: "Pickup From" },
+      { key: "DetailsOrDropoff", label: "Drop To" },
+      { key: "Flight", label: "Flight" },
+      { key: "FlightTime", label: "Flight Time" },
+      { key: "SendTo", label: "Send To" },
+      { key: "Note", label: "Note" },
       { key: "Cost", label: "Cost" },
       { key: "Sell", label: "Sell" },
       { key: "Profit", label: "Profit" },
@@ -739,7 +737,7 @@ const Report = () => {
                 </button>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                ลำดับ
+                No.
               </th>
               {columns.map((col) => (
                 <th
@@ -848,19 +846,19 @@ const Report = () => {
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-50 min-h-screen">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">รายงาน</h1>
-        <p className="text-gray-600">สร้างรายงานและ Export ข้อมูล Bookings</p>
+        <h1 className="text-3xl font-bold text-gray-800">Report</h1>
+        <p className="text-gray-600">Create Reports and Export Booking Data</p>
       </div>
 
       {/* Filter Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 className="text-lg font-semibold mb-4">ตัวกรองข้อมูล</h3>
+        <h3 className="text-lg font-semibold mb-4">Data Filters</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           {/* Month Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              เดือน/ปี
+              Month/Year
             </label>
             <div className="relative">
               <Calendar
@@ -887,7 +885,7 @@ const Report = () => {
               onChange={setCurrentAgentValue}
               onAdd={handleAddAgent}
               onAddNew={(value) => handleAddNewInformation(value, "agent")}
-              placeholder="เลือก Agent"
+              placeholder="Select Agent"
               selectedItems={selectedAgents}
             />
           </div>
@@ -895,7 +893,7 @@ const Report = () => {
           {/* Tour Recipient Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              ส่งใคร (Tour)
+              Send To (Tour)
             </label>
             <FilterInputWithAdd
               options={tourRecipients}
@@ -905,7 +903,7 @@ const Report = () => {
               onAddNew={(value) =>
                 handleAddNewInformation(value, "tour_recipients")
               }
-              placeholder="เลือกผู้รับ Tour"
+              placeholder="Select Tour Recipient"
               selectedItems={selectedTourRecipients}
             />
           </div>
@@ -913,7 +911,7 @@ const Report = () => {
           {/* Transfer Recipient Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              ส่งใคร (Transfer)
+              Send To (Transfer)
             </label>
             <FilterInputWithAdd
               options={transferRecipients}
@@ -923,7 +921,7 @@ const Report = () => {
               onAddNew={(value) =>
                 handleAddNewInformation(value, "transfer_recipients")
               }
-              placeholder="เลือกผู้รับ Transfer"
+              placeholder="Select Transfer Recipient"
               selectedItems={selectedTransferRecipients}
             />
           </div>
@@ -953,7 +951,7 @@ const Report = () => {
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Calendar size={18} className="mr-2" />
-              แสดงทั้งเดือน
+              Show Full Month
             </button>
           </div>
 
@@ -961,31 +959,31 @@ const Report = () => {
             {/* Export Format Dropdown */}
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">
-                รูปแบบ Excel:
+                Excel Format:
               </label>
               <select
                 value={exportFormat}
                 onChange={(e) => setExportFormat(e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="combined">รวม</option>
-                <option value="separate">แยก Tour/Transfer</option>
+                <option value="combined">Combined</option>
+                <option value="separate">Separate Tour/Transfer</option>
               </select>
             </div>
 
             {/* Export Range Dropdown */}
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">
-                ช่วงเวลา:
+                Period:
               </label>
               <select
                 value={exportRange}
                 onChange={(e) => setExportRange(e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="first_15">15 วันแรก</option>
-                <option value="last_15">15 วันหลัง</option>
-                <option value="full_month">ทั้งเดือน</option>
+                <option value="first_15">First 15 Days</option>
+                <option value="last_15">Last 15 Days</option>
+                <option value="full_month">Full Month</option>
               </select>
             </div>
 
@@ -1001,7 +999,7 @@ const Report = () => {
               {isExporting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  กำลัง Export...
+                  Exporting...
                 </>
               ) : (
                 <>
@@ -1018,7 +1016,7 @@ const Report = () => {
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+          <p className="mt-2 text-gray-600">Loading data...</p>
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-center">
@@ -1041,7 +1039,7 @@ const Report = () => {
                     ].length
                   }
                 </p>
-                <p className="text-sm text-gray-600">จำนวน Order ทั้งหมด</p>
+                <p className="text-sm text-gray-600">Total Orders</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <h4 className="text-lg font-semibold text-green-800">Tour</h4>
@@ -1049,7 +1047,7 @@ const Report = () => {
                   {tourBookings.length}
                 </p>
                 <p className="text-sm text-gray-600">
-                  เลือกแล้ว: {selectedTourIds.size} รายการ
+                  Selected: {selectedTourIds.size} items
                 </p>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
@@ -1060,19 +1058,19 @@ const Report = () => {
                   {transferBookings.length}
                 </p>
                 <p className="text-sm text-gray-600">
-                  เลือกแล้ว: {selectedTransferIds.size} รายการ
+                  Selected: {selectedTransferIds.size} items
                 </p>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <h4 className="text-lg font-semibold text-purple-800">
-                  รวมทั้งหมด
+                  Total
                 </h4>
                 <p className="text-2xl font-bold text-purple-600">
                   {tourBookings.length + transferBookings.length}
                 </p>
                 <p className="text-sm text-gray-600">
-                  เลือกแล้ว: {selectedTourIds.size + selectedTransferIds.size}{" "}
-                  รายการ
+                  Selected: {selectedTourIds.size + selectedTransferIds.size}{" "}
+                  items
                 </p>
               </div>
             </div>
@@ -1080,7 +1078,7 @@ const Report = () => {
 
           <div className="bg-white rounded-lg shadow-md p-4 mb-4">
             <h3 className="text-lg font-semibold mb-2">
-              เลือกคอลัมน์ที่ต้องการแสดง
+              Select Columns to Display
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-8 gap-2">
               {Object.keys(visibleColumns).map((column) => (
@@ -1093,25 +1091,25 @@ const Report = () => {
                   />
                   <span className="text-sm text-gray-700">
                     {column === "Hotel"
-                      ? "โรงแรม"
+                      ? "Hotel"
                       : column === "Details"
-                      ? "รายละเอียด"
+                      ? "Details"
                       : column === "PickupFrom"
-                      ? "รับจาก"
+                      ? "Pickup From"
                       : column === "DropTo"
-                      ? "ส่งที่"
+                      ? "Drop To"
                       : column === "CustomerName"
-                      ? "ชื่อลูกค้า"
+                      ? "Customer Name"
                       : column === "PickupTime"
-                      ? "เวลารับ"
+                      ? "Pickup Time"
                       : column === "ReferenceID"
                       ? "Reference ID"
                       : column === "Pax"
-                      ? "จำนวนคน"
+                      ? "Pax"
                       : column === "SendTo"
-                      ? "ส่ง"
+                      ? "Send To"
                       : column === "FlightTime"
-                      ? "เวลาบิน"
+                      ? "Flight Time"
                       : column}
                   </span>
                 </label>
@@ -1149,8 +1147,8 @@ const Report = () => {
               {selectedAgents.length === 0 &&
               selectedTourRecipients.length === 0 &&
               selectedTransferRecipients.length === 0
-                ? "กรุณาเลือกตัวกรองเพื่อแสดงข้อมูล"
-                : "ไม่พบข้อมูลตามเงื่อนไขที่เลือก"}
+                ? "Please select filters to display data"
+                : "No data found matching the selected criteria"}
             </div>
           )}
         </>

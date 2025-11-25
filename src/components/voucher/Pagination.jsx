@@ -38,7 +38,7 @@ const Pagination = ({
   return (
     <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
       <div className="text-sm text-gray-600">
-        แสดง {startItem} ถึง {endItem} จากทั้งหมด {totalItems} รายการ
+        Showing {startItem} to {endItem} of {totalItems} entries
       </div>
       <div className="flex items-center space-x-2">
         <button
@@ -47,7 +47,7 @@ const Pagination = ({
           className="px-3 py-1 border rounded-md flex items-center disabled:opacity-50"
         >
           <ChevronLeft size={16} className="mr-1" />
-          ก่อนหน้า
+          Previous
         </button>
 
         <div className="flex space-x-1">
@@ -71,7 +71,7 @@ const Pagination = ({
           disabled={currentPage === totalPages}
           className="px-3 py-1 border rounded-md flex items-center disabled:opacity-50"
         >
-          ถัดไป
+          Next
           <ChevronRight size={16} className="ml-1" />
         </button>
       </div>

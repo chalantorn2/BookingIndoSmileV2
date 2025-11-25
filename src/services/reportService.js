@@ -1,6 +1,5 @@
 import ExcelJS from "exceljs";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { th } from "date-fns/locale";
 
 const generateFileName = (
   selectedMonth,
@@ -38,7 +37,7 @@ const generateFileName = (
     else if (transferCount === 1)
       filterText = `Transfer${selectedFilters.transferRecipients[0]}`;
   } else {
-    filterText = "รวม";
+    filterText = "All";
   }
 
   return `Report${filterText}${monthEng}${year}${rangeTextEng}${dateCreated}.xlsx`;
@@ -90,12 +89,12 @@ export const exportReportToExcel = async (
       "transfer"
     );
 
-    const monthName = format(new Date(selectedMonth), "MMMM", { locale: th });
+    const monthName = format(new Date(selectedMonth), "MMMM");
     const year = format(new Date(selectedMonth), "yyyy");
     const rangeTextEng = getRangeTextEng(exportRange);
 
-    let typeText = "รวม";
-    let reportName = "รายการ Bookings";
+    let typeText = "All";
+    let reportName = "Booking List";
     if (exportFormat === "separate") {
       if (filteredTourBookings.length > 0) {
         typeText =
@@ -104,8 +103,8 @@ export const exportReportToExcel = async (
             : "Tour";
         reportName =
           filterType === "tour_recipient" && selectedTourRecipient
-            ? `รายการ Bookings Tour ${selectedTourRecipient}`
-            : "รายการ Bookings Tour";
+            ? `Tour Booking List ${selectedTourRecipient}`
+            : "Tour Booking List";
       } else if (filteredTransferBookings.length > 0) {
         typeText =
           filterType === "transfer_recipient" && selectedTransferRecipient
@@ -113,18 +112,18 @@ export const exportReportToExcel = async (
             : "Transfer";
         reportName =
           filterType === "transfer_recipient" && selectedTransferRecipient
-            ? `รายการ Bookings Transfer ${selectedTransferRecipient}`
-            : "รายการ Bookings Transfer";
+            ? `Transfer Booking List ${selectedTransferRecipient}`
+            : "Transfer Booking List";
       }
     } else if (filterType === "tour_recipient" && selectedTourRecipient) {
       typeText = `Tour${selectedTourRecipient}`;
-      reportName = `รายการ Bookings Tour ${selectedTourRecipient}`;
+      reportName = `Tour Booking List ${selectedTourRecipient}`;
     } else if (
       filterType === "transfer_recipient" &&
       selectedTransferRecipient
     ) {
       typeText = `Transfer${selectedTransferRecipient}`;
-      reportName = `รายการ Bookings Transfer ${selectedTransferRecipient}`;
+      reportName = `Transfer Booking List ${selectedTransferRecipient}`;
     }
 
     const fileName = generateFileName(
@@ -138,7 +137,7 @@ export const exportReportToExcel = async (
     const hasTransfer = filteredTransferBookings.length > 0;
 
     if (!hasTour && !hasTransfer) {
-      throw new Error("ไม่มีข้อมูลสำหรับ Export");
+      throw new Error("No data to export");
     }
 
     if (exportFormat === "separate") {
@@ -195,14 +194,14 @@ export const exportReportToExcel = async (
     return {
       success: true,
       fileName,
-      message: `ส่งออกรายงานสำเร็จ: ${fileName}`,
+      message: `Export successful: ${fileName}`,
     };
   } catch (error) {
     console.error("Error exporting report to Excel:", error);
     return {
       success: false,
       error: error.message,
-      message: "เกิดข้อผิดพลาดในการส่งออกรายงาน",
+      message: "Error exporting report",
     };
   }
 };
@@ -248,12 +247,12 @@ const filterBookingsByRange = (bookings, selectedMonth, exportRange, type) => {
 const getRangeText = (exportRange) => {
   switch (exportRange) {
     case "first_15":
-      return "15 วันแรก";
+      return "First 15 Days";
     case "last_15":
-      return "15 วันหลัง";
+      return "Last 15 Days";
     case "full_month":
     default:
-      return "ทั้งเดือน";
+      return "Full Month";
   }
 };
 
@@ -337,7 +336,7 @@ const setupCombinedSheet = async (
     });
 
     const dateCell = worksheet.getCell(currentRow, 1);
-    dateCell.value = `วันที่ ${format(new Date(dateKey), "dd/MM/yyyy")}`;
+    dateCell.value = `Date: ${format(new Date(dateKey), "dd/MM/yyyy")}`;
     dateCell.font = {
       size: 14,
       bold: true,
@@ -352,25 +351,25 @@ const setupCombinedSheet = async (
     currentRow++;
 
     const headers = [
-      "ลำดับ",
-      "ประเภท",
+      "No.",
+      "Type",
       "Agent",
-      "ชื่อลูกค้า",
-      "จำนวนคน",
-      "เวลารับ",
-      "โรงแรม",
-      "รายละเอียด",
-      "รับจาก",
-      "ส่งที่",
-      "เที่ยวบิน",
-      "เวลาบิน",
-      "ส่งใคร",
-      "หมายเหตุ",
+      "Customer Name",
+      "Pax",
+      "Pickup Time",
+      "Hotel",
+      "Details",
+      "Pickup From",
+      "Drop To",
+      "Flight",
+      "Flight Time",
+      "Send To",
+      "Remark",
       "",
       "Cost",
       "Sell",
       "Profit",
-      "Note", // เพิ่มคอลัมน์ Note
+      "Note",
     ];
 
     headers.forEach((header, index) => {
@@ -476,7 +475,7 @@ const setupCombinedSheet = async (
   const totalProfit = totalSell - totalCost;
 
   // แถว "สรุป" - merge จาก A ถึง N
-  worksheet.getCell(currentRow, 1).value = "สรุป";
+  worksheet.getCell(currentRow, 1).value = "Summary";
   worksheet.getCell(currentRow, 1).font = { bold: true };
   worksheet.getCell(currentRow, 1).alignment = {
     horizontal: "center",
@@ -540,8 +539,8 @@ const setupTransferSheet = async (
 
   const reportName =
     filterType === "transfer_recipient" && selectedTransferRecipient
-      ? `รายการ Bookings Transfer ${selectedTransferRecipient}`
-      : "รายการ Bookings Transfer";
+      ? `Transfer Booking List ${selectedTransferRecipient}`
+      : "Transfer Booking List";
   worksheet.getCell("A1").value = reportName;
   worksheet.getCell("A1").font = {
     size: 16,
@@ -575,7 +574,7 @@ const setupTransferSheet = async (
     });
 
     const dateCell = worksheet.getCell(currentRow, 1);
-    dateCell.value = `วันที่ ${format(new Date(dateKey), "dd/MM/yyyy")}`;
+    dateCell.value = `Date: ${format(new Date(dateKey), "dd/MM/yyyy")}`;
     dateCell.font = {
       size: 14,
       bold: true,
@@ -590,22 +589,22 @@ const setupTransferSheet = async (
     currentRow++;
 
     const transferHeaders = [
-      "ลำดับ",
+      "No.",
       "Agent",
-      "ชื่อลูกค้า",
-      "จำนวนคน",
-      "เวลารับ",
-      "รับจาก",
-      "ส่งที่",
-      "เที่ยวบิน",
-      "เวลาบิน",
-      "ส่งใคร",
-      "หมายเหตุ",
+      "Customer Name",
+      "Pax",
+      "Pickup Time",
+      "Pickup From",
+      "Drop To",
+      "Flight",
+      "Flight Time",
+      "Send To",
+      "Remark",
       "",
       "Cost",
       "Sell",
       "Profit",
-      "Note", // เพิ่มคอลัมน์ Note
+      "Note",
     ];
 
     transferHeaders.forEach((header, index) => {
@@ -711,7 +710,7 @@ const setupTransferSheet = async (
   const totalProfit = totalSell - totalCost;
 
   // แถว "สรุป" - merge จาก A ถึง L และใส่ border
-  worksheet.getCell(currentRow, 1).value = "สรุป";
+  worksheet.getCell(currentRow, 1).value = "Summary";
   worksheet.getCell(currentRow, 1).font = { bold: true };
   worksheet.getCell(currentRow, 1).alignment = {
     horizontal: "center",
@@ -773,8 +772,8 @@ const setupTourSheet = async (
 
   const reportName =
     filterType === "tour_recipient" && selectedTourRecipient
-      ? `รายการ Bookings Tour ${selectedTourRecipient}`
-      : "รายการ Bookings Tour";
+      ? `Tour Booking List ${selectedTourRecipient}`
+      : "Tour Booking List";
   worksheet.getCell("A1").value = reportName;
   worksheet.getCell("A1").font = {
     size: 16,
@@ -808,7 +807,7 @@ const setupTourSheet = async (
     });
 
     const dateCell = worksheet.getCell(currentRow, 1);
-    dateCell.value = `วันที่ ${format(new Date(dateKey), "dd/MM/yyyy")}`;
+    dateCell.value = `Date: ${format(new Date(dateKey), "dd/MM/yyyy")}`;
     dateCell.font = {
       size: 14,
       bold: true,
@@ -823,20 +822,20 @@ const setupTourSheet = async (
     currentRow++;
 
     const tourHeaders = [
-      "ลำดับ",
+      "No.",
       "Agent",
-      "ชื่อลูกค้า",
-      "จำนวนคน",
-      "เวลารับ",
-      "โรงแรม",
-      "รายละเอียด",
-      "ส่งใคร",
-      "หมายเหตุ",
+      "Customer Name",
+      "Pax",
+      "Pickup Time",
+      "Hotel",
+      "Details",
+      "Send To",
+      "Remark",
       "",
       "Cost",
       "Sell",
       "Profit",
-      "Note", // เพิ่มคอลัมน์ Note
+      "Note",
     ];
 
     tourHeaders.forEach((header, index) => {
@@ -942,7 +941,7 @@ const setupTourSheet = async (
   const totalProfit = totalSell - totalCost;
 
   // แถว "สรุป" - merge จาก A ถึง J และใส่ border
-  worksheet.getCell(currentRow, 1).value = "สรุป";
+  worksheet.getCell(currentRow, 1).value = "Summary";
   worksheet.getCell(currentRow, 1).font = { bold: true };
   worksheet.getCell(currentRow, 1).alignment = {
     horizontal: "center",
@@ -985,7 +984,7 @@ const setupTourSheet = async (
 const prepareCombinedRowData = (booking, index) => {
   const firstName = booking.orders?.first_name || "";
   const lastName = booking.orders?.last_name || "";
-  const customerName = `${firstName} ${lastName}`.trim() || "ไม่มีชื่อ";
+  const customerName = `${firstName} ${lastName}`.trim() || "No Name";
 
   const formatPax = () => {
     if (booking.orders) {
@@ -1031,7 +1030,7 @@ const prepareCombinedRowData = (booking, index) => {
   return [
     index,
     booking.type === "tour" ? "Tour" : "Transfer",
-    booking.orders?.agent_name || "ไม่ระบุ Agent",
+    booking.orders?.agent_name || "No Agent",
     customerName,
     formatPax(),
     time,
@@ -1054,7 +1053,7 @@ const prepareCombinedRowData = (booking, index) => {
 const prepareTourRowData = (booking, index) => {
   const firstName = booking.orders?.first_name || "";
   const lastName = booking.orders?.last_name || "";
-  const customerName = `${firstName} ${lastName}`.trim() || "ไม่มีชื่อ";
+  const customerName = `${firstName} ${lastName}`.trim() || "No Name";
 
   const formatPax = () => {
     if (booking.orders) {
@@ -1078,7 +1077,7 @@ const prepareTourRowData = (booking, index) => {
 
   return [
     index,
-    booking.orders?.agent_name || "ไม่ระบุ Agent",
+    booking.orders?.agent_name || "No Agent",
     customerName,
     formatPax(),
     booking.tour_pickup_time || "-",
@@ -1097,7 +1096,7 @@ const prepareTourRowData = (booking, index) => {
 const prepareTransferRowData = (booking, index) => {
   const firstName = booking.orders?.first_name || "";
   const lastName = booking.orders?.last_name || "";
-  const customerName = `${firstName} ${lastName}`.trim() || "ไม่มีชื่อ";
+  const customerName = `${firstName} ${lastName}`.trim() || "No Name";
 
   const formatPax = () => {
     if (booking.orders) {
@@ -1121,7 +1120,7 @@ const prepareTransferRowData = (booking, index) => {
 
   return [
     index,
-    booking.orders?.agent_name || "ไม่ระบุ Agent",
+    booking.orders?.agent_name || "No Agent",
     customerName,
     formatPax(),
     booking.transfer_time || "-",

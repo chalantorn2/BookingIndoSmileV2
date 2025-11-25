@@ -101,7 +101,7 @@ const BookingDetailModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setStatusMessage({ type: "info", message: "กำลังบันทึกข้อมูล..." });
+    setStatusMessage({ type: "info", message: "Saving data..." });
 
     try {
       // สร้างข้อมูลใหม่โดยไม่รวมฟิลด์ orders (ถ้ามี)
@@ -138,7 +138,7 @@ const BookingDetailModal = ({
         if (orderError) {
           console.error("Error updating orders:", orderError);
           throw new Error(
-            `ไม่สามารถอัปเดตข้อมูลใน orders: ${orderError.message}`
+            `Unable to update orders: ${orderError.message}`
           );
         }
 
@@ -151,7 +151,7 @@ const BookingDetailModal = ({
         if (tourError) {
           console.error("Error updating tour_bookings:", tourError);
           throw new Error(
-            `ไม่สามารถอัปเดตข้อมูลใน tour_bookings: ${tourError.message}`
+            `Unable to update tour_bookings: ${tourError.message}`
           );
         }
 
@@ -164,7 +164,7 @@ const BookingDetailModal = ({
         if (transferError) {
           console.error("Error updating transfer_bookings:", transferError);
           throw new Error(
-            `ไม่สามารถอัปเดตข้อมูลใน transfer_bookings: ${transferError.message}`
+            `Unable to update transfer_bookings: ${transferError.message}`
           );
         }
       }
@@ -173,7 +173,7 @@ const BookingDetailModal = ({
       const result = await onSave(bookingDataToSave);
 
       if (result.success) {
-        setStatusMessage({ type: "success", message: "บันทึกข้อมูลสำเร็จ" });
+        setStatusMessage({ type: "success", message: "Data saved successfully" });
 
         // ปิด modal หลังจากบันทึกสำเร็จ
         setTimeout(() => {
@@ -182,15 +182,15 @@ const BookingDetailModal = ({
       } else {
         setStatusMessage({
           type: "error",
-          message: `เกิดข้อผิดพลาด: ${
-            result.error || "ไม่สามารถบันทึกข้อมูลได้"
+          message: `Error: ${
+            result.error || "Unable to save data"
           }`,
         });
       }
     } catch (error) {
       setStatusMessage({
         type: "error",
-        message: `เกิดข้อผิดพลาด: ${error.message}`,
+        message: `Error: ${error.message}`,
       });
     } finally {
       setIsSubmitting(false);
@@ -201,11 +201,11 @@ const BookingDetailModal = ({
   const handleDelete = async () => {
     // เปลี่ยนจาก confirm เป็น showAlert
     const confirmed = await showAlert({
-      title: "ยืนยันการลบ",
-      description: "คุณต้องการลบรายการนี้ใช่หรือไม่?",
-      confirmText: "ลบ",
-      cancelText: "ยกเลิก",
-      actionVariant: "destructive", // กำหนดสีปุ่มเป็นสีแดง
+      title: "Confirm Delete",
+      description: "Do you want to delete this item?",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      actionVariant: "destructive", // Set button color to red
     });
 
     // ทำงานต่อเมื่อผู้ใช้กดยืนยันเท่านั้น
@@ -215,7 +215,7 @@ const BookingDetailModal = ({
       const result = await onDelete(booking.id);
 
       if (result.success) {
-        setStatusMessage({ type: "success", message: "ลบข้อมูลสำเร็จ" });
+        setStatusMessage({ type: "success", message: "Data deleted successfully" });
 
         setTimeout(() => {
           onClose();
@@ -223,7 +223,7 @@ const BookingDetailModal = ({
       } else {
         setStatusMessage({
           type: "error",
-          message: `เกิดข้อผิดพลาด: ${result.error || "ไม่สามารถลบข้อมูลได้"}`,
+          message: `Error: ${result.error || "Unable to delete data"}`,
         });
       }
 
@@ -240,21 +240,21 @@ const BookingDetailModal = ({
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-lg font-medium flex items-center">
             <User size={18} className="mr-2 text-gray-600" />
-            ข้อมูล Order
+            Order Information
           </h4>
           <span className="text-sm text-gray-500">
-            {/* (ข้อมูลนี้ไม่สามารถแก้ไขได้ใน modal นี้) */}
+            {/* (This information cannot be edited in this modal) */}
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-gray-600">รหัส Order:</p>
+            <p className="text-sm text-gray-600">Order ID:</p>
             <p className="font-medium">
               {orderData.reference_id || `#${orderData.id}`}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">ชื่อลูกค้า:</p>
+            <p className="text-sm text-gray-600">Customer Name:</p>
             <p className="font-medium">
               {orderData.first_name} {orderData.last_name}
             </p>
@@ -273,30 +273,30 @@ const BookingDetailModal = ({
     if (bookingType === "tour") {
       return [
         {
-          title: "ข้อมูลหลัก",
+          title: "Main Information",
           icon: <Calendar size={18} className="mr-2 text-green-600" />,
           fields: [
             {
               name: "reference_id",
-              label: "รหัสการจอง",
+              label: "Booking ID",
               readOnly: true,
               value: booking.reference_id || `#${booking.id}`,
             },
             {
               name: "status",
-              label: "สถานะ",
+              label: "Status",
               type: "select",
               options: [
-                { value: "pending", label: "รอดำเนินการ" },
-                { value: "booked", label: "จองแล้ว" },
-                { value: "in_progress", label: "ดำเนินการอยู่" },
-                { value: "completed", label: "เสร็จสมบูรณ์" },
-                { value: "cancelled", label: "ยกเลิก" },
+                { value: "pending", label: "Pending" },
+                { value: "booked", label: "Booked" },
+                { value: "in_progress", label: "In Progress" },
+                { value: "completed", label: "Completed" },
+                { value: "cancelled", label: "Cancelled" },
               ],
             },
             {
               name: "tour_date",
-              label: "วันที่",
+              label: "Date",
               type: "date",
               className:
                 "bg-green-50 border-green-300 text-green-800 font-bold",
@@ -305,7 +305,7 @@ const BookingDetailModal = ({
 
             {
               name: "tour_pickup_time",
-              label: "เวลารับ",
+              label: "Pick up Time",
               className:
                 "bg-green-50 border-green-300 text-green-800 font-bold",
               labelClass: "text-green-700 font-semibold",
@@ -313,13 +313,13 @@ const BookingDetailModal = ({
           ],
         },
         {
-          title: "รายละเอียดทัวร์",
+          title: "Tour Details",
           icon: <Package size={18} className="mr-2 text-green-600" />,
           fields: [
-            { name: "tour_type", label: "ประเภททัวร์" },
+            { name: "tour_type", label: "Tour Type" },
             {
               name: "tour_detail",
-              label: "รายละเอียด",
+              label: "Details",
               type: "textarea",
               className:
                 "bg-green-50 border-green-300 text-green-800 font-bold",
@@ -330,7 +330,7 @@ const BookingDetailModal = ({
                 <div className="md:col-span-3 grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ผู้ใหญ่:
+                      Adult:
                     </label>
                     <input
                       type="number"
@@ -348,7 +348,7 @@ const BookingDetailModal = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      เด็ก:
+                      Child:
                     </label>
                     <input
                       type="number"
@@ -366,7 +366,7 @@ const BookingDetailModal = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ทารก:
+                      Infant:
                     </label>
                     <input
                       type="number"
@@ -387,22 +387,22 @@ const BookingDetailModal = ({
             },
             {
               name: "tour_hotel",
-              label: "โรงแรม",
+              label: "Hotel",
               className:
                 "bg-green-50 border-green-300 text-green-800 font-bold",
               labelClass: "text-green-700 font-semibold",
             },
             {
               name: "tour_room_no",
-              label: "หมายเลขห้อง",
+              label: "Room Number",
               className:
                 "bg-green-50 border-green-300 text-green-800 font-bold",
               labelClass: "text-green-700 font-semibold",
             },
-            { name: "tour_contact_no", label: "เบอร์ติดต่อ" },
+            { name: "tour_contact_no", label: "Contact Number" },
             {
               name: "send_to",
-              label: "ส่งใคร",
+              label: "Send to",
               className:
                 "bg-green-50 border-green-300 text-green-800 font-bold",
               labelClass: "text-green-700 font-semibold",
@@ -410,62 +410,62 @@ const BookingDetailModal = ({
           ],
         },
         {
-          title: "ราคาและหมายเหตุ",
+          title: "Price and Notes",
           icon: <FileText size={18} className="mr-2 text-green-600" />,
           fields: [
-            { name: "cost_price", label: "ราคาต้นทุน", type: "number" },
-            { name: "selling_price", label: "ราคาขาย", type: "number" },
-            { name: "note", label: "หมายเหตุ", type: "textarea" },
+            { name: "cost_price", label: "Cost Price", type: "number" },
+            { name: "selling_price", label: "Selling Price", type: "number" },
+            { name: "note", label: "Notes", type: "textarea" },
           ],
         },
       ];
     } else {
       return [
         {
-          title: "ข้อมูลหลัก",
+          title: "Main Information",
           icon: <Calendar size={18} className="mr-2 text-blue-600" />,
           fields: [
             {
               name: "reference_id",
-              label: "รหัสการจอง",
+              label: "Booking ID",
               readOnly: true,
               value: booking.reference_id || `#${booking.id}`,
             },
             {
               name: "status",
-              label: "สถานะ",
+              label: "Status",
               type: "select",
               options: [
-                { value: "pending", label: "รอดำเนินการ" },
-                { value: "booked", label: "จองแล้ว" },
-                { value: "in_progress", label: "ดำเนินการอยู่" },
-                { value: "completed", label: "เสร็จสมบูรณ์" },
-                { value: "cancelled", label: "ยกเลิก" },
+                { value: "pending", label: "Pending" },
+                { value: "booked", label: "Booked" },
+                { value: "in_progress", label: "In Progress" },
+                { value: "completed", label: "Completed" },
+                { value: "cancelled", label: "Cancelled" },
               ],
             },
             {
               name: "transfer_date",
-              label: "วันที่",
+              label: "Date",
               type: "date",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
             {
               name: "transfer_time",
-              label: "เวลารับ",
+              label: "Pick up Time",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
           ],
         },
         {
-          title: "รายละเอียดการรับส่ง",
+          title: "Transfer Details",
           icon: <Clock size={18} className="mr-2 text-blue-600" />,
           fields: [
-            { name: "transfer_type", label: "ประเภทการรับส่ง" },
+            { name: "transfer_type", label: "Transfer Type" },
             {
               name: "transfer_detail",
-              label: "รายละเอียด",
+              label: "Details",
               type: "textarea",
             },
             {
@@ -473,7 +473,7 @@ const BookingDetailModal = ({
                 <div className="md:col-span-3 grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ผู้ใหญ่:
+                      Adult:
                     </label>
                     <input
                       type="number"
@@ -491,7 +491,7 @@ const BookingDetailModal = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      เด็ก:
+                      Child:
                     </label>
                     <input
                       type="number"
@@ -509,7 +509,7 @@ const BookingDetailModal = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ทารก:
+                      Infant:
                     </label>
                     <input
                       type="number"
@@ -530,55 +530,55 @@ const BookingDetailModal = ({
             },
             {
               name: "pickup_location",
-              label: "สถานที่รับ",
+              label: "Pick up Location",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
             {
               name: "drop_location",
-              label: "สถานที่ส่ง",
+              label: "Drop off Location",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
             {
               name: "transfer_flight",
-              label: "เที่ยวบิน",
+              label: "Flight",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
             {
               name: "transfer_ftime",
-              label: "เวลาบิน",
+              label: "Flight Time",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
             {
               name: "send_to",
-              label: "ส่งใคร",
+              label: "Send to",
               className: "bg-blue-50 border-blue-300 text-blue-800 font-bold",
               labelClass: "text-blue-700 font-semibold",
             },
-            { name: "note", label: "หมายเหตุ", type: "textarea" },
+            { name: "note", label: "Notes", type: "textarea" },
           ],
         },
         {
-          title: "ข้อมูลคนขับ",
+          title: "Driver Information",
           icon: <User size={18} className="mr-2 text-blue-600" />,
           className: showAdditionalFields ? "" : "hidden",
           fields: [
-            { name: "driver_name", label: "ชื่อคนขับ" },
-            { name: "license_plate", label: "ทะเบียนรถ" },
-            { name: "car_model", label: "รุ่นรถ" },
-            { name: "phone_number", label: "เบอร์โทร" },
+            { name: "driver_name", label: "Driver Name" },
+            { name: "license_plate", label: "License Plate" },
+            { name: "car_model", label: "Car Model" },
+            { name: "phone_number", label: "Phone Number" },
           ],
         },
         {
-          title: "ราคาและหมายเหตุ",
+          title: "Price and Notes",
           icon: <FileText size={18} className="mr-2 text-blue-600" />,
           fields: [
-            { name: "cost_price", label: "ราคาต้นทุน", type: "number" },
-            { name: "selling_price", label: "ราคาขาย", type: "number" },
-            { name: "payment_note", label: "หมายเหตุ", type: "textarea" },
+            { name: "cost_price", label: "Cost Price", type: "number" },
+            { name: "selling_price", label: "Selling Price", type: "number" },
+            { name: "payment_note", label: "Notes", type: "textarea" },
           ],
         },
       ];
@@ -655,14 +655,14 @@ const BookingDetailModal = ({
     }
   };
 
-  // ฟังก์ชันแปลงสถานะเป็นภาษาไทย
+  // Function to translate status to English
   const getStatusText = (status) => {
     const statusMap = {
-      pending: "รอดำเนินการ",
-      booked: "จองแล้ว",
-      in_progress: "ดำเนินการอยู่",
-      completed: "เสร็จสมบูรณ์",
-      cancelled: "ยกเลิก",
+      pending: "Pending",
+      booked: "Booked",
+      in_progress: "In Progress",
+      completed: "Completed",
+      cancelled: "Cancelled",
     };
     return statusMap[status] || status;
   };
@@ -696,8 +696,8 @@ const BookingDetailModal = ({
           <div className="flex justify-center items-center">
             <span className="text-xl font-semibold mr-2">
               {bookingType === "tour"
-                ? "รายละเอียดการจองทัวร์"
-                : "รายละเอียดการจองรถรับส่ง"}
+                ? "Tour Booking Details"
+                : "Transfer Booking Details"}
             </span>
             {booking.status && (
               <span
@@ -775,7 +775,7 @@ const BookingDetailModal = ({
               className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
             >
               <Trash2 size={18} className="mr-2" />
-              ลบรายการ
+              Delete
             </button>
 
             <div className="flex gap-2">
@@ -784,7 +784,7 @@ const BookingDetailModal = ({
                 onClick={onClose}
                 className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                ปิด
+                Close
               </button>
 
               <button
@@ -816,12 +816,12 @@ const BookingDetailModal = ({
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    กำลังบันทึก...
+                    Saving...
                   </span>
                 ) : (
                   <>
                     <Save size={18} className="mr-2" />
-                    บันทึกข้อมูล
+                    Save
                   </>
                 )}
               </button>

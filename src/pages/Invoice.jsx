@@ -164,7 +164,7 @@ const Invoice = () => {
       calculateTotals();
     } catch (error) {
       console.error("Error building invoice table:", error);
-      setError("เกิดข้อผิดพลาดในการสร้างตาราง Invoice");
+      setError("Error occurred while building Invoice table");
     } finally {
       setLoading(false);
     }
@@ -172,17 +172,20 @@ const Invoice = () => {
 
   const handleSaveInvoice = async () => {
     if (selectedPaymentIds.length === 0) {
-      setError("กรุณาเลือก Payment อย่างน้อย 1 รายการ");
+      setError("Please select at least 1 Payment");
       return;
     }
     if (!invoiceDate) {
-      setError("กรุณากรอกวันที่ก่อนบันทึก Invoice");
+      setError("Please specify the Invoice date before saving");
       return;
     }
 
-    const promptedInvoiceName = prompt("กรุณาตั้งชื่อ Invoice:", invoiceName);
+    const promptedInvoiceName = prompt(
+      "Please enter Invoice name:",
+      invoiceName
+    );
     if (!promptedInvoiceName) {
-      setError("คุณยังไม่ได้ตั้งชื่อ Invoice");
+      setError("Invoice name not specified");
       return;
     }
 
@@ -205,7 +208,7 @@ const Invoice = () => {
         safeTotalSellingPrice > MAX_NUMERIC_VALUE ||
         safeTotalProfit > MAX_NUMERIC_VALUE
       ) {
-        throw new Error("ตัวเลขมีค่าสูงเกินไป ไม่สามารถบันทึกได้");
+        throw new Error("Numeric value too high, cannot save");
       }
 
       const invoiceData = {
@@ -240,7 +243,9 @@ const Invoice = () => {
           console.error(`Failed to update payment ${paymentId}:`, updateError);
       }
 
-      showSuccess(`บันทึก Invoice เรียบร้อย! Invoice: ${promptedInvoiceName}`);
+      showSuccess(
+        `Invoice saved successfully! Invoice: ${promptedInvoiceName}`
+      );
       setSelectedPaymentIds([]);
       setGrandTotal(0);
       setTotalCost(0);
@@ -249,7 +254,7 @@ const Invoice = () => {
       await loadInitialData();
     } catch (error) {
       console.error("Error saving invoice:", error);
-      setError(`เกิดข้อผิดพลาดในการบันทึก Invoice: ${error.message}`);
+      setError(`Error saving Invoice: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -301,14 +306,14 @@ const Invoice = () => {
       const { data, error } = await fetchAllInvoices();
       if (error) throw error;
       if (!data || data.length === 0) {
-        setError("ไม่พบข้อมูล Invoice");
+        setError("No Invoice data found");
         return;
       }
       setInvoicesList(data);
       setIsViewModalOpen(true);
     } catch (error) {
       console.error("Error loading invoices:", error);
-      setError("ไม่สามารถโหลดรายการ Invoice ได้");
+      setError("Cannot load Invoice list");
     } finally {
       setLoading(false);
     }
@@ -316,7 +321,7 @@ const Invoice = () => {
 
   const handleViewSelectedInvoice = async (selectedInvoiceId) => {
     if (!selectedInvoiceId) {
-      setError("กรุณาเลือก Invoice ก่อน");
+      setError("Please select an Invoice first");
       return;
     }
     setLoading(true);
@@ -324,7 +329,7 @@ const Invoice = () => {
       const { data, error } = await fetchInvoiceById(selectedInvoiceId);
       if (error) throw error;
       if (!data) {
-        setError("ไม่พบข้อมูล Invoice");
+        setError("Invoice data not found");
         return;
       }
 
@@ -377,7 +382,7 @@ const Invoice = () => {
       setIsViewModalOpen(false);
     } catch (error) {
       console.error("Error loading invoice:", error);
-      setError("ไม่สามารถโหลดข้อมูล Invoice ได้");
+      setError("Cannot load Invoice data");
     } finally {
       setLoading(false);
       setIsViewingExistingInvoice(true);
@@ -387,7 +392,7 @@ const Invoice = () => {
   // เพิ่มฟังก์ชันใหม่สำหรับเปิด Modal แก้ไข Invoice
   const handleEditInvoice = async () => {
     if (!invoiceId) {
-      setError("กรุณาเลือก Invoice ที่จะแก้ไขก่อน");
+      setError("Please select an Invoice to edit first");
       return;
     }
 
@@ -408,9 +413,7 @@ const Invoice = () => {
       setIsEditModalOpen(true);
     } catch (error) {
       console.error("Error preparing to edit invoice:", error);
-      setError(
-        `ไม่สามารถเตรียมข้อมูลสำหรับแก้ไข Invoice ได้: ${error.message}`
-      );
+      setError(`Cannot prepare data for editing Invoice: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -419,12 +422,12 @@ const Invoice = () => {
   // ฟังก์ชันสำหรับบันทึกการแก้ไข Invoice
   const handleSaveEditedInvoice = async () => {
     if (!editingInvoiceId) {
-      setError("ไม่พบ Invoice ที่กำลังแก้ไข");
+      setError("Invoice being edited not found");
       return;
     }
 
     if (editablePaymentIds.length === 0) {
-      setError("กรุณาเลือก Payment อย่างน้อย 1 รายการ");
+      setError("Please select at least 1 Payment");
       return;
     }
 
@@ -505,14 +508,14 @@ const Invoice = () => {
       setTotalSellingPrice(updatedTotalSellingPrice);
       setTotalProfit(updatedTotalProfit);
 
-      showSuccess("อัพเดท Invoice เรียบร้อยแล้ว");
+      showSuccess("Invoice updated successfully");
       setIsEditModalOpen(false);
 
       // โหลดข้อมูลใหม่
       await loadInitialData();
     } catch (error) {
       console.error("Error saving edited invoice:", error);
-      setError(`ไม่สามารถบันทึกการแก้ไข Invoice ได้: ${error.message}`);
+      setError(`Cannot save Invoice edits: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -557,16 +560,16 @@ const Invoice = () => {
 
   const handleDeleteInvoice = async () => {
     if (!invoiceId) {
-      setError("กรุณาเลือก Invoice ที่จะลบก่อน");
+      setError("Please select an Invoice to delete first");
       return;
     }
 
     const confirmed = await showAlert({
-      title: "ยืนยันการลบ Invoice",
+      title: "Confirm Invoice Deletion",
       description:
-        "คุณแน่ใจหรือไม่ว่าต้องการลบ Invoice นี้? การดำเนินการนี้ไม่สามารถเรียกคืนได้",
-      confirmText: "ลบ",
-      cancelText: "ยกเลิก",
+        "Are you sure you want to delete this Invoice? This action cannot be undone",
+      confirmText: "Delete",
+      cancelText: "Cancel",
       actionVariant: "destructive",
     });
 
@@ -583,7 +586,7 @@ const Invoice = () => {
       // อัพเดทสถานะ invoiced ของ Payment เป็น false
       await updatePaymentsInvoiceStatus(selectedPaymentIds, false);
 
-      showSuccess("ลบ Invoice เรียบร้อยแล้ว");
+      showSuccess("Invoice deleted successfully");
 
       // รีเซ็ตค่าต่างๆ
       setInvoiceId("");
@@ -601,7 +604,7 @@ const Invoice = () => {
       await loadInitialData();
     } catch (error) {
       console.error("Error deleting invoice:", error);
-      setError(`ไม่สามารถลบ Invoice ได้: ${error.message}`);
+      setError(`Cannot delete Invoice: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -611,7 +614,7 @@ const Invoice = () => {
     try {
       const table = document.getElementById("invoiceTable");
       if (!table) {
-        setError("ไม่พบตาราง Invoice");
+        setError("Invoice table not found");
         return;
       }
       let csv = [];
@@ -639,10 +642,10 @@ const Invoice = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showSuccess("นำออกข้อมูลเป็น CSV สำเร็จ");
+      showSuccess("Data exported to CSV successfully");
     } catch (error) {
       console.error("Error exporting to CSV:", error);
-      setError("เกิดข้อผิดพลาดในการนำออกข้อมูลเป็น CSV");
+      setError("Error exporting data to CSV");
     }
   };
 
@@ -652,7 +655,10 @@ const Invoice = () => {
   };
 
   const handleEditRef = async (paymentId, currentRef) => {
-    const newRefValue = prompt("กรุณากรอกเลข REF ใหม่:", currentRef || "");
+    const newRefValue = prompt(
+      "Please enter new REF number:",
+      currentRef || ""
+    );
     if (newRefValue === null) return;
     try {
       setLoading(true);
@@ -661,24 +667,24 @@ const Invoice = () => {
         .update({ ref: newRefValue })
         .eq("id", paymentId);
       if (error) throw error;
-      showSuccess("อัปเดต REF เรียบร้อย");
+      showSuccess("REF updated successfully");
       buildInvoiceTable();
     } catch (error) {
       console.error("Error updating REF:", error);
-      setError("ไม่สามารถอัปเดต REF ได้");
+      setError("Cannot update REF");
     } finally {
       setLoading(false);
     }
   };
 
   const handleEditFee = async (paymentId, bookingIndex, currentFee) => {
-    const newFeeValue = prompt("กรุณากรอก Fee ใหม่:", currentFee || "0");
+    const newFeeValue = prompt("Please enter new fee:", currentFee || "0");
     if (newFeeValue === null) return;
     try {
       setLoading(true);
       const payment = allPaymentsData.find((p) => p.id === paymentId);
       if (!payment || !payment.bookings || !payment.bookings[bookingIndex]) {
-        throw new Error("ไม่พบข้อมูล Booking");
+        throw new Error("Booking data not found");
       }
       const bookingsCopy = JSON.parse(JSON.stringify(payment.bookings));
       bookingsCopy[bookingIndex].fee = parseFloat(newFeeValue) || 0;
@@ -687,12 +693,12 @@ const Invoice = () => {
         .update({ bookings: bookingsCopy })
         .eq("id", paymentId);
       if (error) throw error;
-      showSuccess("อัปเดต Fee เรียบร้อย");
+      showSuccess("Fee updated successfully");
       await loadInitialData();
       buildInvoiceTable();
     } catch (error) {
       console.error("Error updating fee:", error);
-      setError("ไม่สามารถอัปเดต Fee ได้");
+      setError("Cannot update fee");
     } finally {
       setLoading(false);
     }
@@ -701,13 +707,13 @@ const Invoice = () => {
   // เพิ่มฟังก์ชันแก้ไข Deduction
   const handleEditDeduction = async (type) => {
     if (!invoiceId) {
-      setError("กรุณาเลือก Invoice ก่อนแก้ไข Deduction");
+      setError("Please select an Invoice before editing deduction");
       return;
     }
 
     if (type === "description") {
       const newDescription = prompt(
-        "กรุณากรอกรายละเอียดการหัก:",
+        "Please enter deduction description:",
         deductionDescription
       );
       if (newDescription !== null) {
@@ -717,14 +723,14 @@ const Invoice = () => {
           await updateInvoice(invoiceId, {
             deduction_description: newDescription,
           });
-          showSuccess("อัปเดตรายละเอียดการหัก เรียบร้อย");
+          showSuccess("Deduction description updated successfully");
         } catch (error) {
-          setError("ไม่สามารถบันทึกรายละเอียดการหักได้");
+          setError("Cannot save deduction description");
         }
       }
     } else if (type === "amount") {
       const newAmount = prompt(
-        "กรุณากรอกจำนวนเงินที่หัก:",
+        "Please enter deduction amount:",
         deductionAmount.toString()
       );
       if (newAmount !== null) {
@@ -735,26 +741,26 @@ const Invoice = () => {
           await updateInvoice(invoiceId, {
             deduction_amount: numAmount.toString(),
           });
-          showSuccess("อัปเดตจำนวนเงินการหัก เรียบร้อย");
+          showSuccess("Deduction amount updated successfully");
         } catch (error) {
-          setError("ไม่สามารถบันทึกจำนวนเงินการหักได้");
+          setError("Cannot save deduction amount");
         }
       }
     }
   };
 
   const handleEditInvoiceDate = () => {
-    const newDate = prompt("กรุณากรอกวันที่ Invoice:", invoiceDate);
+    const newDate = prompt("Please enter Invoice date:", invoiceDate);
     if (!newDate) return;
     setInvoiceDate(newDate);
     if (invoiceId) {
       updateInvoice(invoiceId, { invoice_date: newDate })
         .then(({ success }) => {
-          if (success) showSuccess("อัปเดตวันที่ Invoice เรียบร้อย");
+          if (success) showSuccess("Invoice date updated successfully");
         })
         .catch((error) => {
           console.error("Error updating invoice date:", error);
-          setError("ไม่สามารถอัปเดตวันที่ Invoice ได้");
+          setError("Cannot update Invoice date");
         });
     }
   };
@@ -768,7 +774,7 @@ const Invoice = () => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Invoice Print</title>
+      <title>Print Invoice</title>
       <style>
         /* รีเซ็ตสไตล์ */
         * { 
@@ -1043,7 +1049,7 @@ const Invoice = () => {
         if (showCostProfit) {
           printWindow.document.write(`
            <tr class="total-row">
-             <td colspan="6" style="text-align: right; font-weight: bold;">Sub-Total (Cost/Price/Profit)</td>
+             <td colspan="6" style="text-align: right; font-weight: bold;">Subtotal (Cost/Price/Profit)</td>
              <td style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
                paymentCostTotal
              )}</td>
@@ -1063,7 +1069,7 @@ const Invoice = () => {
          <tr class="total-row">
            <td colspan="${
              showCostProfit ? 10 : 8
-           }" style="text-align: right; font-weight: bold;">Total Amount</td>
+           }" style="text-align: right; font-weight: bold;">Total</td>
            <td colspan="2" style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
              paymentRowTotal
            )}</td>
@@ -1078,7 +1084,7 @@ const Invoice = () => {
  <tr class="sub-total-row" style="background-color: #f0fff4;">
    <td colspan="${
      showCostProfit ? 10 : 8
-   }" style="text-align: right; font-weight: bold;">SUB TOTAL</td>
+   }" style="text-align: right; font-weight: bold;">Grand Total</td>
    <td colspan="2" style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
      grandTotal
    )}</td>
@@ -1113,14 +1119,14 @@ const Invoice = () => {
     printWindow.document.write(`
     <div class="invoice-footer">
       <div>
-        <p style="font-weight: bold; margin-bottom: 5px;">PAYMENT TO SEVENSMILE</p>
-        <p>KBank 255-2431-068</p>
-        <p>ACCT : Janthawarath Loosathidkool</p>
+        <p style="font-weight: bold; margin-bottom: 5px;">Transfer to SEVENSMILE</p>
+        <p>Kasikorn Bank 255-2431-068</p>
+        <p>Account Name: Chantawarat Loosatidkun</p>
       </div>
      <div style="text-align: right;">
-          <p style="font-weight: bold; font-size: 14px;">GRAND TOTAL: ${formatNumberWithCommas(
+          <p style="font-weight: bold; font-size: 14px;">Net Total: ${formatNumberWithCommas(
             (grandTotal || 0) - (deductionAmount || 0)
-          )} THB</p>
+          )} Baht</p>
         </div>
     </div>
   `);
@@ -1139,7 +1145,7 @@ const Invoice = () => {
       organizePaymentsByMonth(data);
     } catch (error) {
       console.error("Error loading initial data:", error);
-      setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+      setError("Cannot load data, please try again");
     } finally {
       setLoading(false);
     }
@@ -1154,7 +1160,7 @@ const Invoice = () => {
         <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-4">
           <div className="flex items-center justify-between mb-4">
             <h5 className="text-lg font-bold">
-              เลือก Payments ที่ต้องการสร้าง Invoice
+              Select Payments to Create Invoice
             </h5>
             <button
               className="text-gray-500 hover:text-gray-700"
@@ -1166,7 +1172,7 @@ const Invoice = () => {
           <div className="max-h-[70vh] overflow-y-auto">
             {Object.keys(paymentsByMonth).length === 0 ? (
               <div className="text-yellow-600 bg-yellow-100 p-3 rounded">
-                ไม่พบข้อมูล Payment
+                No payments without invoices
               </div>
             ) : (
               <div className="space-y-3">
@@ -1218,13 +1224,13 @@ const Invoice = () => {
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
               onClick={() => setIsSelectModalOpen(false)}
             >
-              ปิด
+              Close
             </button>
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               onClick={handleConfirmSelection}
             >
-              ยืนยันการเลือก
+              Confirm Selection
             </button>
           </div>
         </div>
@@ -1264,8 +1270,8 @@ const Invoice = () => {
       ? filteredInvoices
       : recentInvoices;
     const displayTitle = showSearchResults
-      ? `ผลการค้นหา (${filteredInvoices.length} รายการ)`
-      : "Invoice ล่าสุด (3 รายการ)";
+      ? `Search Results (${filteredInvoices.length} items)`
+      : "Recent Invoices (3 items)";
 
     if (!isViewModalOpen) return null;
 
@@ -1273,7 +1279,7 @@ const Invoice = () => {
       <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
         <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-4">
           <div className="flex items-center justify-between mb-4">
-            <h5 className="text-lg font-bold">เลือก Invoice</h5>
+            <h5 className="text-lg font-bold">Select Invoice</h5>
             <button
               className="text-gray-500 hover:text-gray-700"
               onClick={() => setIsViewModalOpen(false)}
@@ -1292,7 +1298,7 @@ const Invoice = () => {
               <input
                 type="text"
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded"
-                placeholder="ค้นหาตามชื่อหรือวันที่..."
+                placeholder="Search by name or date..."
                 value={searchInvoiceQuery}
                 onChange={(e) => setSearchInvoiceQuery(e.target.value)}
               />
@@ -1302,7 +1308,7 @@ const Invoice = () => {
                 onClick={() => setSearchInvoiceQuery("")}
                 className="mt-2 text-xs text-blue-600 hover:text-blue-800"
               >
-                ล้างการค้นหา
+                Clear Search
               </button>
             )}
           </div>
@@ -1316,8 +1322,8 @@ const Invoice = () => {
             {displayInvoices.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 {showSearchResults
-                  ? "ไม่พบ Invoice ที่ตรงกับคำค้นหา"
-                  : "ไม่พบข้อมูล Invoice"}
+                  ? "No invoices match the search"
+                  : "No invoice data found"}
               </div>
             ) : (
               <div className="space-y-2">
@@ -1329,15 +1335,15 @@ const Invoice = () => {
                   >
                     <div>
                       <div className="font-medium">
-                        {invoice.invoice_name || "ไม่มีชื่อ"}
+                        {invoice.invoice_name || "No Name"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {invoice.invoice_date || "ไม่มีวันที่"}
+                        {invoice.invoice_date || "No Date"}
                       </div>
                       <div className="text-xs text-gray-400 mt-1">
-                        ยอดรวม:{" "}
+                        Total:{" "}
                         {parseFloat(invoice.total_amount || 0).toLocaleString()}{" "}
-                        บาท
+                        Baht
                       </div>
                     </div>
 
@@ -1352,14 +1358,14 @@ const Invoice = () => {
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {invoice.status ? "เรียบร้อย" : "ไม่เรียบร้อย"}
+                        {invoice.status ? "Complete" : "Incomplete"}
                       </span>
 
                       {/* แสดงจำนวนไฟล์แนบ */}
                       {invoice.attachments &&
                         invoice.attachments.length > 0 && (
                           <span className="text-xs text-blue-600">
-                            {invoice.attachments.length} ไฟล์
+                            {invoice.attachments.length} Files
                           </span>
                         )}
                     </div>
@@ -1375,7 +1381,7 @@ const Invoice = () => {
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
               onClick={() => setIsViewModalOpen(false)}
             >
-              ปิด
+              Close
             </button>
           </div>
         </div>
@@ -1391,7 +1397,7 @@ const Invoice = () => {
       <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
         <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full p-4">
           <div className="flex items-center justify-between mb-4">
-            <h5 className="text-lg font-bold">แก้ไข Invoice</h5>
+            <h5 className="text-lg font-bold">Edit Invoice</h5>
             <button
               className="text-gray-500 hover:text-gray-700"
               onClick={() => setIsEditModalOpen(false)}
@@ -1404,13 +1410,13 @@ const Invoice = () => {
             {/* ส่วนซ้าย - Payment ที่เลือกแล้ว */}
             <div className="border rounded-lg p-4">
               <h6 className="font-semibold mb-3 border-b pb-2">
-                Payment ที่เลือกไว้
+                Selected Payments
               </h6>
 
               <div className="max-h-[50vh] overflow-y-auto">
                 {editablePaymentIds.length === 0 ? (
                   <div className="text-center py-4 text-gray-500">
-                    ไม่มี Payment ที่เลือกไว้
+                    No payments selected
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1465,7 +1471,7 @@ const Invoice = () => {
                               {payment.first_name} {payment.last_name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {payment.agent_name || "ไม่ระบุ Agent"}
+                              {payment.agent_name || "No Agent"}
                             </div>
                             {dateRangeText && (
                               <div className="text-xs text-blue-600 mt-1">
@@ -1521,13 +1527,13 @@ const Invoice = () => {
             {/* ส่วนขวา - Payment ที่ยังไม่ถูกเลือก */}
             <div className="border rounded-lg p-4">
               <h6 className="font-semibold mb-3 border-b pb-2">
-                Payment ที่ยังไม่ออก Invoice
+                Payments Without Invoice
               </h6>
 
               <div className="max-h-[50vh] overflow-y-auto">
                 {nonInvoicedPayments.length === 0 ? (
                   <div className="text-center py-4 text-gray-500">
-                    ไม่มี Payment ที่ยังไม่ออก Invoice
+                    No payments without invoice
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1580,7 +1586,7 @@ const Invoice = () => {
                               {payment.first_name} {payment.last_name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {payment.agent_name || "ไม่ระบุ Agent"}
+                              {payment.agent_name || "No Agent"}
                             </div>
                             {dateRangeText && (
                               <div className="text-xs text-blue-600 mt-1">
@@ -1612,7 +1618,7 @@ const Invoice = () => {
               onClick={handleDeleteInvoice}
             >
               <Trash2 size={16} className="mr-2" />
-              ลบ Invoice นี้
+              Delete This Invoice
             </button>
 
             <div className="flex space-x-2">
@@ -1620,7 +1626,7 @@ const Invoice = () => {
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 onClick={() => setIsEditModalOpen(false)}
               >
-                ยกเลิก
+                Cancel
               </button>
 
               <button
@@ -1628,7 +1634,7 @@ const Invoice = () => {
                 onClick={handleSaveEditedInvoice}
               >
                 <Save size={16} className="mr-2" />
-                บันทึกการแก้ไข
+                Save Changes
               </button>
             </div>
           </div>
@@ -1645,7 +1651,7 @@ const Invoice = () => {
     <div className="container mx-auto px-4 py-6 bg-gray-50 min-h-screen">
       <div className="text-center mb-6 print:hidden">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Invoice</h1>
-        <p className="text-gray-600 mb-4">รายละเอียด Order / Payment ทั้งหมด</p>
+        <p className="text-gray-600 mb-4">All Order / Payment Details</p>
       </div>
 
       <div className="max-w-7xl mx-auto p-4 rounded-lg shadow-md bg-white print:p-0 print:m-0 print:w-full">
@@ -1672,8 +1678,7 @@ const Invoice = () => {
         <div className="print:hidden text-center mb-4 space-x-2">
           {isViewingExistingInvoice && (
             <div className="text-center mb-4 bg-blue-100 text-blue-700 p-2 rounded">
-              กำลังดู Invoice <b>{currentInvoice?.invoice_name || invoiceId}</b>{" "}
-              อยู่
+              Currently viewing Invoice <b>{currentInvoice?.invoice_name || invoiceId}</b>
             </div>
           )}
 
@@ -1682,7 +1687,7 @@ const Invoice = () => {
             onClick={handleOpenSelectModal}
           >
             <CheckSquare size={16} className="mr-1" />
-            เลือก Payments
+            Select Payments
           </button>
 
           <button
@@ -1691,7 +1696,7 @@ const Invoice = () => {
             disabled={isViewingExistingInvoice}
           >
             <Save size={16} className="mr-1" />
-            บันทึก Invoice
+            Save Invoice
           </button>
 
           <button
@@ -1700,7 +1705,7 @@ const Invoice = () => {
             disabled={!isViewingExistingInvoice}
           >
             <Edit size={16} className="mr-1" />
-            แก้ไข Invoice
+            Edit Invoice
           </button>
 
           <button
@@ -1708,7 +1713,7 @@ const Invoice = () => {
             onClick={() => setIsStatusModalOpen(true)}
           >
             <CheckCircle size={16} className="mr-1" />
-            เช็คสถานะ Invoice
+            Check Invoice Status
           </button>
 
           <button
@@ -1716,7 +1721,7 @@ const Invoice = () => {
             onClick={handleViewInvoices}
           >
             <Eye size={16} className="mr-1" />
-            ดูรายการ Invoice
+            View Invoice List
           </button>
 
           <button
@@ -1724,7 +1729,7 @@ const Invoice = () => {
             onClick={handlePrint}
           >
             <Printer size={16} className="mr-1" />
-            พิมพ์
+            Print
           </button>
 
           <div className="text-center mb-4 mt-4">
@@ -1735,14 +1740,14 @@ const Invoice = () => {
                 checked={showCostProfit}
                 onChange={handleToggleCostProfit}
               />
-              <span>แสดงต้นทุน (Cost) และกำไร (Profit)</span>
+              <span>Show Cost and Profit</span>
             </label>
           </div>
         </div>
 
         {error && (
           <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-3 relative rounded print:hidden">
-            <strong className="font-bold mr-1">ข้อผิดพลาด:</strong> {error}
+            <strong className="font-bold mr-1">Error:</strong> {error}
             <button
               className="absolute top-2 right-2 text-red-500 hover:text-red-600"
               onClick={() => setError(null)}

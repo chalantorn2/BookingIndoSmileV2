@@ -198,7 +198,7 @@ const Voucher = () => {
       setTotalPages(Math.ceil(combinedBookings.length / itemsPerPage));
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      setError("ไม่สามารถโหลดข้อมูลการจองได้");
+      setError("Unable to load booking data");
     } finally {
       setLoading(false);
     }
@@ -238,12 +238,12 @@ const Voucher = () => {
   };
 
   const handleCreateVoucher = async (booking) => {
-    showInfo(`กำลังสร้าง Voucher สำหรับการจอง ID: ${booking.reference_id}`);
+    showInfo(`Creating Voucher for booking ID: ${booking.reference_id}`);
     navigate(`/create-voucher/${booking.type}/${booking.id}`);
   };
 
   const handleEditVoucher = async (booking) => {
-    showInfo(`กำลังแก้ไข Voucher สำหรับการจอง ID: ${booking.reference_id}`);
+    showInfo(`Editing Voucher for booking ID: ${booking.reference_id}`);
     navigate(`/create-voucher/${booking.type}/${booking.id}?edit=true`);
   };
 
@@ -272,17 +272,17 @@ const Voucher = () => {
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-50">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">ระบบออก Voucher</h1>
-        <p className="text-gray-600">ค้นหาและจัดการ Voucher สำหรับการจอง</p>
+        <h1 className="text-3xl font-bold text-gray-800">Voucher System</h1>
+        <p className="text-gray-600">Search and manage Vouchers for bookings</p>
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">ค้นหาและกรอง</h2>
+        <h2 className="text-xl font-semibold mb-4">Search and Filter</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
           <div className="md:col-span-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              วันที่เริ่มต้น
+              Start Date
             </label>
             <div className="relative">
               <Calendar
@@ -300,7 +300,7 @@ const Voucher = () => {
 
           <div className="md:col-span-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              วันที่สิ้นสุด
+              End Date
             </label>
             <div className="relative">
               <Calendar
@@ -318,7 +318,7 @@ const Voucher = () => {
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ประเภท
+              Type
             </label>
             <select
               className="w-full border border-gray-300 rounded-lg p-2"
@@ -328,7 +328,7 @@ const Voucher = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="all">ทั้งหมด</option>
+              <option value="all">All</option>
               <option value="tour">Tour</option>
               <option value="transfer">Transfer</option>
             </select>
@@ -336,7 +336,7 @@ const Voucher = () => {
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              สถานะ Voucher
+              Voucher Status
             </label>
             <select
               className="w-full border border-gray-300 rounded-lg p-2"
@@ -346,9 +346,9 @@ const Voucher = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="all">ทั้งหมด</option>
-              <option value="created">สร้างแล้ว</option>
-              <option value="not_created">ยังไม่สร้าง</option>
+              <option value="all">All</option>
+              <option value="created">Created</option>
+              <option value="not_created">Not Created</option>
             </select>
           </div>
 
@@ -358,7 +358,7 @@ const Voucher = () => {
               onClick={applyDateFilter}
             >
               <Filter size={18} className="mr-2" />
-              กรอง
+              Filter
             </button>
           </div>
         </div>
@@ -370,7 +370,7 @@ const Voucher = () => {
           />
           <input
             type="text"
-            placeholder="ค้นหาตามชื่อลูกค้า, ผู้รับ, ประเภท..."
+            placeholder="Search by customer name, recipient, type..."
             className="pl-10 w-full border border-gray-300 rounded-lg p-2"
             value={searchTerm}
             onChange={handleSearch}
@@ -380,21 +380,21 @@ const Voucher = () => {
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">รายการการจองทั้งหมด</h2>
+          <h2 className="text-xl font-semibold">All Bookings</h2>
           <div className="flex space-x-2">
             <button
               className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition flex items-center"
               onClick={() => fetchBookings()}
             >
               <RefreshCcw size={16} className="mr-2" />
-              รีเฟรช
+              Refresh
             </button>
             <button
               className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition flex items-center"
               onClick={handleOtherVouchers}
             >
               <Plus size={16} className="mr-2" />
-              Voucher อื่นๆ
+              Other Vouchers
             </button>
           </div>
         </div>

@@ -86,7 +86,7 @@ const ViewPayment = () => {
       setCurrentPage(pageNumber);
     } catch (err) {
       console.error("Error fetching bookings:", err);
-      setError("ไม่สามารถโหลดข้อมูลได้");
+      setError("Unable to load data");
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ const ViewPayment = () => {
       fetchBookings(currentPage);
     } catch (error) {
       console.error("Error updating payment status:", error);
-      showError("ไม่สามารถอัพเดทสถานะได้");
+      showError("Unable to update status");
     }
   };
 
@@ -135,7 +135,7 @@ const ViewPayment = () => {
       fetchBookings(currentPage);
     } catch (error) {
       console.error("Error updating payment note:", error);
-      showError("ไม่สามารถอัพเดทหมายเหตุได้");
+      showError("Unable to update note");
     }
   };
 
@@ -172,8 +172,8 @@ const ViewPayment = () => {
   return (
     <div className="container mx-auto px-4 py-6  bg-gray-50">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">ตรวจสอบการจ่ายเงิน</h1>
-        <p className="text-gray-600">ตรวจสอบสถานะการจ่ายเงินให้กับผู้รับ</p>
+        <h1 className="text-3xl font-bold text-gray-800">View Payment</h1>
+        <p className="text-gray-600">Check payment status to recipients</p>
       </div>
 
       {/* ส่วนเลือกประเภทและตัวกรอง */}
@@ -182,7 +182,7 @@ const ViewPayment = () => {
           {/* เลือกประเภท */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              ประเภท
+              Type
             </label>
             <div className="flex gap-4">
               <button
@@ -211,13 +211,13 @@ const ViewPayment = () => {
           {/* เลือกผู้รับ */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              ส่งใคร
+              Send To
             </label>
             <AutocompleteInput
               options={recipientOptions}
               value={selectedRecipient}
               onChange={setSelectedRecipient}
-              placeholder={`เลือก ${
+              placeholder={`Select ${
                 selectedType === "tour" ? "Tour" : "Transfer"
               }`}
             />
@@ -228,7 +228,7 @@ const ViewPayment = () => {
           {/* วันที่เริ่มต้น */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              วันที่เริ่มต้น
+              Start Date
             </label>
             <div className="relative">
               <Calendar
@@ -247,7 +247,7 @@ const ViewPayment = () => {
           {/* วันที่สิ้นสุด */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              วันที่สิ้นสุด
+              End Date
             </label>
             <div className="relative">
               <Calendar
@@ -269,7 +269,7 @@ const ViewPayment = () => {
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+          <p className="mt-2 text-gray-600">Loading data...</p>
         </div>
       ) : error ? (
         <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center">
@@ -279,10 +279,10 @@ const ViewPayment = () => {
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
             <h3 className="font-semibold">
-              รายการของ {selectedRecipient} (ทั้งหมด {bookings.length} รายการ)
+              List for {selectedRecipient} (Total {bookings.length} items)
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              ยอดรวมทั้งหมด: {totalAmount.toLocaleString()} บาท
+              Total Amount: {totalAmount.toLocaleString()} THB
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -290,28 +290,28 @@ const ViewPayment = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    ลำดับ
+                    No.
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    รหัสอ้างอิง
+                    Reference
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    ชื่อลูกค้า
+                    Customer Name
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    วันที่
+                    Date
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    ยอดเงิน
+                    Amount
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                    สถานะการจ่าย
+                    Payment Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    หมายเหตุ
+                    Note
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                    รายละเอียด
+                    Details
                   </th>
                 </tr>
               </thead>
@@ -350,7 +350,7 @@ const ViewPayment = () => {
                       {booking.cost_price
                         ? parseFloat(booking.cost_price).toLocaleString()
                         : "0"}{" "}
-                      บาท
+                      THB
                     </td>
                     <td className="px-4 py-3  whitespace-nowrap text-center">
                       <select
@@ -364,8 +364,8 @@ const ViewPayment = () => {
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        <option value="not_paid">ยังไม่จ่าย</option>
-                        <option value="paid">จ่ายแล้ว</option>
+                        <option value="not_paid">Not Paid</option>
+                        <option value="paid">Paid</option>
                       </select>
                     </td>
                     <td className="px-4 py-3">
@@ -387,7 +387,7 @@ const ViewPayment = () => {
                           }
                         }}
                         className="w-full px-2 py-1 text-sm bg-transparent border border-transparent hover:bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none rounded transition-colors"
-                        placeholder="คลิกเพื่อเพิ่มหมายเหตุ"
+                        placeholder="Click to add note"
                       />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
@@ -412,7 +412,7 @@ const ViewPayment = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed mr-2"
               >
-                ก่อนหน้า
+                Previous
               </button>
 
               {[...Array(Math.min(5, totalPages))].map((_, index) => {
@@ -447,14 +447,14 @@ const ViewPayment = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed ml-2"
               >
-                ถัดไป
+                Next
               </button>
             </div>
           )}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500">
-          {selectedRecipient ? "ไม่พบข้อมูล" : "กรุณาเลือกผู้รับ"}
+          {selectedRecipient ? "No data found" : "Please select a recipient"}
         </div>
       )}
 
@@ -482,11 +482,11 @@ const ViewPayment = () => {
               // รีเฟรชข้อมูลและปิด modal
               await fetchBookings(currentPage);
               setIsModalOpen(false);
-              showSuccess("อัพเดทข้อมูลเรียบร้อย");
+              showSuccess("Data updated successfully");
               return { success: true };
             } catch (error) {
               console.error("Error updating booking:", error);
-              showError("ไม่สามารถอัพเดทข้อมูลได้");
+              showError("Unable to update data");
               return { success: false, error: error.message };
             }
           }}
@@ -494,10 +494,10 @@ const ViewPayment = () => {
             // ถ้าคุณต้องการให้ลบได้ด้วย ให้แก้ไขส่วนนี้เป็น:
             try {
               const confirmed = await showAlert({
-                title: "ยืนยันการลบ",
-                description: "คุณต้องการลบรายการนี้ใช่หรือไม่?",
-                confirmText: "ลบ",
-                cancelText: "ยกเลิก",
+                title: "Confirm Delete",
+                description: "Do you want to delete this item?",
+                confirmText: "Delete",
+                cancelText: "Cancel",
                 actionVariant: "destructive",
               });
 
@@ -515,11 +515,11 @@ const ViewPayment = () => {
               // รีเฟรชข้อมูลและปิด modal
               await fetchBookings(currentPage);
               setIsModalOpen(false);
-              showSuccess("ลบข้อมูลเรียบร้อย");
+              showSuccess("Data deleted successfully");
               return { success: true };
             } catch (error) {
               console.error("Error deleting booking:", error);
-              showError("ไม่สามารถลบข้อมูลได้");
+              showError("Unable to delete data");
               return { success: false, error: error.message };
             }
           }}

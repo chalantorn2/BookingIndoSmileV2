@@ -9,10 +9,10 @@ import {
 } from "../services/captureService";
 
 /**
- * Hook สำหรับการใช้งานระบบแคปภาพในคอมโพเนนต์ใดๆ
+ * Hook for using the image capture system in any component
  *
- * @param {Object} options - ตัวเลือกการแคป
- * @returns {Object} - ฟังก์ชันและสถานะสำหรับการแคป
+ * @param {Object} options - Capture options
+ * @returns {Object} - Functions and state for capturing
  */
 const useCapture = (options = {}) => {
   const { showSuccess, showError, showInfo } = useNotification();
@@ -22,21 +22,21 @@ const useCapture = (options = {}) => {
   const captureRef = useRef(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  // ตรวจสอบการโหลด Font
+  // Check font loading
   useEffect(() => {
     const checkFonts = async () => {
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
         setFontsLoaded(true);
       } else {
-        // Fallback สำหรับเบราว์เซอร์เก่า
+        // Fallback for older browsers
         setTimeout(() => setFontsLoaded(true), 1000);
       }
     };
 
     checkFonts();
 
-    // เพิ่ม Font Prompt ถ้ายังไม่ได้โหลด
+    // Add Prompt font if not loaded yet
     const fontLink = document.querySelector('link[href*="Prompt"]');
     if (!fontLink) {
       const link = document.createElement("link");
@@ -48,9 +48,9 @@ const useCapture = (options = {}) => {
   }, []);
 
   /**
-   * แคปภาพและบันทึกเป็นไฟล์
-   * @param {string} filename - ชื่อไฟล์สำหรับบันทึก
-   * @param {Object} captureOptions - ตัวเลือกการแคปเพิ่มเติม
+   * Capture image and save as file
+   * @param {string} filename - Filename for saving
+   * @param {Object} captureOptions - Additional capture options
    */
   const capture = async (filename = "captured-image", captureOptions = {}) => {
     if (!captureRef.current || !fontsLoaded) {
@@ -80,8 +80,8 @@ const useCapture = (options = {}) => {
   };
 
   /**
-   * แคปภาพและคัดลอกไปยังคลิปบอร์ด
-   * @param {Object} captureOptions - ตัวเลือกการแคปเพิ่มเติม
+   * Capture image and copy to clipboard
+   * @param {Object} captureOptions - Additional capture options
    */
   const copyToClipboard = async (captureOptions = {}) => {
     if (!captureRef.current || !fontsLoaded) {
@@ -111,8 +111,8 @@ const useCapture = (options = {}) => {
   };
 
   /**
-   * สร้างตัวอย่างรูปภาพ
-   * @param {Object} captureOptions - ตัวเลือกการแคปเพิ่มเติม
+   * Create image preview
+   * @param {Object} captureOptions - Additional capture options
    */
   const createPreview = async (captureOptions = {}) => {
     if (!captureRef.current || !fontsLoaded) {
@@ -144,14 +144,14 @@ const useCapture = (options = {}) => {
   };
 
   /**
-   * ล้างตัวอย่างรูปภาพ
+   * Clear image preview
    */
   const clearPreview = () => {
     setPreviewUrl(null);
   };
 
   /**
-   * สั่งพิมพ์
+   * Trigger print
    */
   const print = () => {
     window.print();
@@ -159,8 +159,8 @@ const useCapture = (options = {}) => {
   };
 
   /**
-   * แคปภาพด้วยตัวเลือกขั้นสูง
-   * @param {Object} advancedOptions - ตัวเลือกการแคปขั้นสูง
+   * Capture image with advanced options
+   * @param {Object} advancedOptions - Advanced capture options
    */
   const captureAdvanced = async (advancedOptions = {}) => {
     if (!captureRef.current || !fontsLoaded) {

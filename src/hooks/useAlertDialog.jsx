@@ -17,7 +17,7 @@ export const useAlertDialog = () => {
     description: "",
     confirmText: "ตกลง",
     cancelText: "ยกเลิก",
-    actionVariant: "primary", // เปลี่ยนค่าเริ่มต้นเป็น primary
+    actionVariant: "primary", // Change default value to primary
     onConfirm: () => {},
     onCancel: () => {},
   });
@@ -30,7 +30,7 @@ export const useAlertDialog = () => {
         description: options.description || "",
         confirmText: options.confirmText || "ตกลง",
         cancelText: options.cancelText || "ยกเลิก",
-        actionVariant: options.actionVariant || "primary", // ใช้ primary ถ้าไม่ระบุ
+        actionVariant: options.actionVariant || "primary", // Use primary if not specified
         onConfirm: () => {
           setDialogState((prev) => ({ ...prev, isOpen: false }));
           resolve(true);
@@ -41,7 +41,7 @@ export const useAlertDialog = () => {
         },
       };
 
-      // Debug ค่า actionVariant
+      // Debug actionVariant value
       console.log("showAlert - actionVariant:", newState.actionVariant);
 
       setDialogState(newState);
@@ -62,7 +62,7 @@ export const useAlertDialog = () => {
 
     if (!isOpen) return null;
 
-    // กำหนดสไตล์สำหรับปุ่มยืนยันตาม actionVariant
+    // Define styles for confirm button based on actionVariant
     const variantStyles = {
       destructive: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-400",
       success:
@@ -77,7 +77,7 @@ export const useAlertDialog = () => {
       variantStyles[actionVariant] || variantStyles.primary
     }`;
 
-    // Debug ค่า actionVariant ที่ใช้ใน render
+    // Debug actionVariant value used in render
     console.log("AlertDialogComponent - actionVariant:", actionVariant);
 
     return (

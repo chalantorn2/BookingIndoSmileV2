@@ -176,10 +176,10 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
   const renderStep1 = () => (
     <div>
       <h3 className="text-lg font-semibold mb-4">
-        Step 1: เลือก Master Record
+        Step 1: Select Master Record
       </h3>
       <p className="text-gray-600 mb-4">
-        เลือกข้อมูลหลักที่จะเป็นตัวแทนหลังจากการรวม
+        Select the master record to keep after merging
       </p>
 
       <div className="max-h-60 overflow-y-auto border rounded-md">
@@ -210,7 +210,7 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
           disabled={!selectedMaster}
           className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          ถัดไป <ArrowRight size={16} className="ml-1" />
+          Next <ArrowRight size={16} className="ml-1" />
         </button>
       </div>
     </div>
@@ -219,7 +219,7 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
   const renderStep2 = () => (
     <div>
       <h3 className="text-lg font-semibold mb-4">
-        Step 2: เลือก Duplicate Records
+        Step 2: Select Duplicate Records
       </h3>
       <div className="bg-blue-50 p-3 rounded-md mb-4">
         <div className="font-medium">Master Record:</div>
@@ -227,7 +227,7 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
       </div>
 
       <p className="text-gray-600 mb-4">
-        เลือกข้อมูลที่ต้องการรวมเข้ากับ Master Record
+        Select records to merge with the Master Record
       </p>
 
       <div className="max-h-60 overflow-y-auto border rounded-md">
@@ -271,14 +271,14 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
           onClick={() => setStep(1)}
           className="px-4 py-2 border border-gray-300 rounded-md"
         >
-          ย้อนกลับ
+          Back
         </button>
         <button
           onClick={handlePreview}
           disabled={selectedDuplicates.length === 0 || loading}
           className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          {loading ? "กำลังตรวจสอบ..." : "ตรวจสอบผลกระทบ"}{" "}
+          {loading ? "Checking..." : "Check Impact"}{" "}
           <ArrowRight size={16} className="ml-1" />
         </button>
       </div>
@@ -297,25 +297,25 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
 
   const renderStep4 = () => (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Step 4: ยืนยันการรวมข้อมูล</h3>
+      <h3 className="text-lg font-semibold mb-4">Step 4: Confirm Merge</h3>
 
       {previewData && (
         <div className="space-y-4">
           <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
             <div className="flex items-center mb-2">
               <AlertTriangle className="text-yellow-600 mr-2" size={20} />
-              <span className="font-medium">ผลกระทบจากการรวมข้อมูล</span>
+              <span className="font-medium">Impact of Merge</span>
             </div>
             <div className="text-sm text-yellow-800">
-              จะมีการอัพเดทข้อมูลใน{" "}
-              <strong>{previewData.totalAffectedRecords}</strong> รายการ
+              Will update{" "}
+              <strong>{previewData.totalAffectedRecords}</strong> records
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border rounded-md p-3">
               <h4 className="font-medium text-green-700 mb-2">
-                Master Record (จะเก็บไว้)
+                Master Record (will keep)
               </h4>
               <div className="text-sm">
                 <div className="font-medium">
@@ -336,7 +336,7 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
 
             <div className="border rounded-md p-3">
               <h4 className="font-medium text-red-700 mb-2">
-                Duplicate Records (จะถูกลบ)
+                Duplicate Records (will be deleted)
               </h4>
               <div className="space-y-1">
                 {previewData.duplicateRecords.map((record) => (
@@ -350,13 +350,13 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
 
           {Object.keys(previewData.details).length > 0 && (
             <div className="border rounded-md p-3">
-              <h4 className="font-medium mb-2">รายละเอียดการอัพเดท</h4>
+              <h4 className="font-medium mb-2">Update Details</h4>
               <div className="text-sm space-y-1">
                 {Object.entries(previewData.details).map(
                   ([key, count]) =>
                     count > 0 && (
                       <div key={key}>
-                        {key}: {count} รายการ
+                        {key}: {count} records
                       </div>
                     )
                 )}
@@ -371,14 +371,14 @@ const MigrationModal = ({ isOpen, onClose, category, onMigrationComplete }) => {
           onClick={() => setStep(Object.keys(conflicts).length > 0 ? 3 : 2)}
           className="px-4 py-2 border border-gray-300 rounded-md"
         >
-          ย้อนกลับ
+          Back
         </button>
         <button
           onClick={handleMerge}
           disabled={loading}
           className="px-4 py-2 bg-red-500 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          {loading ? "กำลังรวมข้อมูล..." : "ยืนยันการรวม"}{" "}
+          {loading ? "Merging..." : "Confirm Merge"}{" "}
           <Shuffle size={16} className="ml-1" />
         </button>
       </div>

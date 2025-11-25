@@ -42,14 +42,14 @@ const InvoiceStatusModal = ({
   const [previewFile, setPreviewFile] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Load recent invoices เมื่อเปิด Modal
+  // Load recent invoices when opening Modal
   useEffect(() => {
     if (isOpen) {
       loadRecentInvoices();
     }
   }, [isOpen]);
 
-  // Load invoice details เมื่อเลือก Invoice
+  // Load invoice details when selecting Invoice
   useEffect(() => {
     if (selectedInvoice) {
       setInvoiceStatus(selectedInvoice.status || false);
@@ -73,7 +73,7 @@ const InvoiceStatusModal = ({
       const { data, error } = await fetchAllInvoices();
       if (error) throw new Error(error);
 
-      // เรียงตามวันที่สร้างล่าสุด และเอาแค่ 3 อันแรก
+      // Sort by latest creation date and take only first 5
       const recent = (data || [])
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 5);
@@ -81,7 +81,7 @@ const InvoiceStatusModal = ({
       setRecentInvoices(recent);
     } catch (error) {
       console.error("Error loading recent invoices:", error);
-      showError("ไม่สามารถโหลดรายการ Invoice ได้");
+      showError("Unable to load Invoice list");
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ const InvoiceStatusModal = ({
       setShowSearchResults(true);
     } catch (error) {
       console.error("Error searching invoices:", error);
-      showError("เกิดข้อผิดพลาดในการค้นหา");
+      showError("An error occurred while searching");
     }
   };
 
@@ -120,18 +120,18 @@ const InvoiceStatusModal = ({
     const newStatus = !invoiceStatus;
     setInvoiceStatus(newStatus);
 
-    // ✅ Auto-save สถานะทันทีที่เปลี่ยน
+    // ✅ Auto-save status immediately when changed
     if (selectedInvoice?.id) {
       try {
         const result = await updateInvoiceStatus(selectedInvoice.id, newStatus);
         if (result.success) {
           showInfo(
-            `อัพเดทสถานะเป็น "${
-              newStatus ? "เรียบร้อย" : "ไม่เรียบร้อย"
-            }" อัตโนมัติสำเร็จ`
+            `Status updated to "${
+              newStatus ? "Complete" : "Incomplete"
+            }" automatically`
           );
 
-          // 🔄 อัพเดท local state ใน recentInvoices และ searchResults
+          // 🔄 Update local state in recentInvoices and searchResults
           const updateInvoiceInList = (invoiceList) =>
             invoiceList.map((invoice) =>
               invoice.id === selectedInvoice.id
@@ -142,18 +142,18 @@ const InvoiceStatusModal = ({
           setRecentInvoices((prev) => updateInvoiceInList(prev));
           setSearchResults((prev) => updateInvoiceInList(prev));
 
-          // อัพเดท selectedInvoice ด้วย
+          // Update selectedInvoice as well
           setSelectedInvoice((prev) => ({ ...prev, status: newStatus }));
         } else {
-          // Revert สถานะถ้าบันทึกไม่สำเร็จ
+          // Revert status if save fails
           setInvoiceStatus(!newStatus);
-          showError("ไม่สามารถบันทึกสถานะได้ กรุณาลองใหม่อีกครั้ง");
+          showError("Unable to save status. Please try again");
         }
       } catch (autoSaveError) {
         console.error("Auto-save status error:", autoSaveError);
-        // Revert สถานะถ้าเกิดข้อผิดพลาด
+        // Revert status if error occurs
         setInvoiceStatus(!newStatus);
-        showError("เกิดข้อผิดพลาดในการบันทึกสถานะ กรุณาลองใหม่อีกครั้ง");
+        showError("An error occurred while saving status. Please try again");
       }
     }
   };
@@ -163,7 +163,7 @@ const InvoiceStatusModal = ({
     if (!files || files.length === 0) return;
 
     if (!selectedInvoice) {
-      showError("กรุณาเลือก Invoice ก่อนอัพโหลดไฟล์");
+      showError("Please select an Invoice before uploading files");
       return;
     }
 
@@ -172,14 +172,14 @@ const InvoiceStatusModal = ({
 
     try {
       for (const file of files) {
-        // ตรวจสอบไฟล์
+        // Validate file
         const validation = validateFile(file, 5);
         if (!validation.isValid) {
           showError(`${file.name}: ${validation.error}`);
           continue;
         }
 
-        // อัพโหลดไฟล์
+        // Upload file
         const { success, data, error } = await uploadFile(
           file,
           `invoices/${selectedInvoice.id}`
@@ -187,9 +187,9 @@ const InvoiceStatusModal = ({
 
         if (success) {
           uploadedFiles.push(data);
-          showSuccess(`อัพโหลด ${file.name} สำเร็จ`);
+          showSuccess(`Upload ${file.name} successfully`);
         } else {
-          showError(`เกิดข้อผิดพลาดในการอัพโหลด ${file.name}: ${error}`);
+          showError(`An error occurred while uploading ${file.name}: ${error}`);
         }
       }
 
@@ -197,7 +197,7 @@ const InvoiceStatusModal = ({
         const newAttachments = [...attachments, ...uploadedFiles];
         setAttachments(newAttachments);
 
-        // ✅ Auto-save ไฟล์ทันทีที่อัพโหลดสำเร็จ
+        // ✅ Auto-save filesimmediately after uploadsuccessfully
         try {
           const attachmentResult = await updateInvoiceAttachments(
             selectedInvoice.id,
@@ -205,10 +205,10 @@ const InvoiceStatusModal = ({
           );
           if (attachmentResult.success) {
             showInfo(
-              `บันทึกไฟล์แนบอัตโนมัติสำเร็จ (${uploadedFiles.length} ไฟล์)`
+              `Save attachmentsautomatically (${uploadedFiles.length} files)`
             );
 
-            // 🔄 อัพเดท local state ใน recentInvoices และ searchResults
+            // 🔄 Update local state in recentInvoices and searchResults
             const updateInvoiceAttachments = (invoiceList) =>
               invoiceList.map((invoice) =>
                 invoice.id === selectedInvoice.id
@@ -219,26 +219,26 @@ const InvoiceStatusModal = ({
             setRecentInvoices((prev) => updateInvoiceAttachments(prev));
             setSearchResults((prev) => updateInvoiceAttachments(prev));
 
-            // อัพเดท selectedInvoice ด้วย
+            // Update selectedInvoice as well
             setSelectedInvoice((prev) => ({
               ...prev,
               attachments: newAttachments,
             }));
           } else {
             showError(
-              "อัพโหลดสำเร็จแต่ไม่สามารถบันทึกข้อมูลได้ กรุณากดปุ่มบันทึกอีกครั้ง"
+              "Upload successful but unable to save data. Please click save again"
             );
           }
         } catch (autoSaveError) {
           console.error("Auto-save error:", autoSaveError);
           showError(
-            "อัพโหลดสำเร็จแต่ไม่สามารถบันทึกอัตโนมัติได้ กรุณากดปุ่มบันทึกเพื่อยืนยัน"
+            "Upload successful but unable to auto-save. Please click save to confirm"
           );
         }
       }
     } catch (error) {
       console.error("Error uploading files:", error);
-      showError("เกิดข้อผิดพลาดในการอัพโหลดไฟล์");
+      showError("An error occurred while uploading file");
     } finally {
       setUploading(false);
       // Reset input
@@ -250,28 +250,28 @@ const InvoiceStatusModal = ({
     const file = attachments[fileIndex];
 
     const confirmed = await showAlert({
-      title: "ยืนยันการลบไฟล์",
-      description: `คุณต้องการลบไฟล์ "${file.name}" ใช่หรือไม่?`,
-      confirmText: "ลบ",
-      cancelText: "ยกเลิก",
+      title: "Confirm file deletion",
+      description: `Do you want to delete file "${file.name}" ?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
       actionVariant: "destructive",
     });
 
     if (!confirmed) return;
 
     try {
-      // ลบไฟล์จาก Storage
+      // Delete file from Storage
       const { success, error } = await deleteFile(file.path);
 
       if (success) {
-        // ลบออกจาก state
+        // Remove from state
         const newAttachments = attachments.filter(
           (_, index) => index !== fileIndex
         );
         setAttachments(newAttachments);
-        showSuccess("ลบไฟล์สำเร็จ");
+        showSuccess("File deleted successfully");
 
-        // ✅ Auto-save ไฟล์ทันทีที่ลบสำเร็จ
+        // ✅ Auto-save filesimmediately after deletionsuccessfully
         try {
           if (selectedInvoice?.id) {
             const attachmentResult = await updateInvoiceAttachments(
@@ -279,9 +279,9 @@ const InvoiceStatusModal = ({
               newAttachments
             );
             if (attachmentResult.success) {
-              showInfo("บันทึกการลบไฟล์อัตโนมัติสำเร็จ");
+              showInfo("File deletion saved automatically");
 
-              // 🔄 อัพเดท local state ใน recentInvoices และ searchResults
+              // 🔄 Update local state in recentInvoices and searchResults
               const updateInvoiceAttachments = (invoiceList) =>
                 invoiceList.map((invoice) =>
                   invoice.id === selectedInvoice.id
@@ -292,47 +292,47 @@ const InvoiceStatusModal = ({
               setRecentInvoices((prev) => updateInvoiceAttachments(prev));
               setSearchResults((prev) => updateInvoiceAttachments(prev));
 
-              // อัพเดท selectedInvoice ด้วย
+              // Update selectedInvoice as well
               setSelectedInvoice((prev) => ({
                 ...prev,
                 attachments: newAttachments,
               }));
             } else {
               showError(
-                "ลบไฟล์สำเร็จแต่ไม่สามารถบันทึกข้อมูลได้ กรุณากดปุ่มบันทึกอีกครั้ง"
+                "File deleted successfullybut unable to save data. Please click Save again"
               );
             }
           }
         } catch (autoSaveError) {
           console.error("Auto-save error after delete:", autoSaveError);
           showError(
-            "ลบไฟล์สำเร็จแต่ไม่สามารถบันทึกอัตโนมัติได้ กรุณากดปุ่มบันทึกเพื่อยืนยัน"
+            "File deleted successfullybut unable to auto-save. Please click Save to confirm"
           );
         }
       } else {
-        showError(`เกิดข้อผิดพลาดในการลบไฟล์: ${error}`);
+        showError(`An error occurred while deleting file: ${error}`);
       }
     } catch (error) {
       console.error("Error deleting file:", error);
-      showError("เกิดข้อผิดพลาดในการลบไฟล์");
+      showError("An error occurred while deleting file");
     }
   };
 
   const handleDownloadFile = (file) => {
-    // เปิดไฟล์ในแท็บใหม่
+    // Open file in new tab
     window.open(file.url, "_blank");
   };
 
   const handleSave = async () => {
     if (!selectedInvoice) {
-      showError("กรุณาเลือก Invoice ก่อน");
+      showError("Please select an Invoice first");
       return;
     }
 
     setLoading(true);
 
     try {
-      // อัพเดตสถานะ
+      // Update status
       const statusResult = await updateInvoiceStatus(
         selectedInvoice.id,
         invoiceStatus
@@ -341,7 +341,7 @@ const InvoiceStatusModal = ({
         throw new Error(statusResult.error);
       }
 
-      // อัพเดตไฟล์แนบ
+      // Update attachments
       const attachmentResult = await updateInvoiceAttachments(
         selectedInvoice.id,
         attachments
@@ -350,15 +350,15 @@ const InvoiceStatusModal = ({
         throw new Error(attachmentResult.error);
       }
 
-      showSuccess("บันทึกข้อมูลสำเร็จ");
+      showSuccess("Data saved successfully");
 
-      // ปิด Modal ทันทีหลังบันทึกสำเร็จ
+      // Close Modal immediately after saving successfully
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (error) {
       console.error("Error saving invoice status:", error);
-      showError(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
+      showError(`An error occurred while saving: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -387,7 +387,7 @@ const InvoiceStatusModal = ({
     <div className="mb-4">
       <h4 className="font-medium text-gray-700 mb-2">{title}</h4>
       {invoices.length === 0 ? (
-        <p className="text-gray-500 text-sm">ไม่พบข้อมูล</p>
+        <p className="text-gray-500 text-sm">No data found</p>
       ) : (
         <div className="space-y-2">
           {invoices.map((invoice) => (
@@ -403,10 +403,10 @@ const InvoiceStatusModal = ({
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-medium text-sm">
-                    {invoice.invoice_name || "ไม่มีชื่อ"}
+                    {invoice.invoice_name || "No name"}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {invoice.invoice_date || "ไม่มีวันที่"}
+                    {invoice.invoice_date || "No date"}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -417,11 +417,11 @@ const InvoiceStatusModal = ({
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {invoice.status ? "เรียบร้อย" : "ไม่เรียบร้อย"}
+                    {invoice.status ? "Complete" : "Incomplete"}
                   </span>
                   {invoice.attachments && invoice.attachments.length > 0 && (
                     <span className="text-xs text-blue-600">
-                      {invoice.attachments.length} ไฟล์
+                      {invoice.attachments.length} files
                     </span>
                   )}
                 </div>
@@ -461,7 +461,7 @@ const InvoiceStatusModal = ({
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 bg-blue-600 text-white rounded-t-lg flex justify-between items-center">
-          <h3 className="text-xl font-semibold">เช็คสถานะ Invoice</h3>
+          <h3 className="text-xl font-semibold">Check Invoice Status</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-blue-700 rounded-full"
@@ -472,13 +472,13 @@ const InvoiceStatusModal = ({
 
         <div className="flex-1 overflow-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* ฝั่งซ้าย: รายการ Invoice */}
+            {/* Left side: Invoice list */}
             <div>
               {/* Search */}
               <div className="mb-4">
                 <input
                   type="text"
-                  placeholder="ค้นหา Invoice (ชื่อหรือวันที่)..."
+                  placeholder="Search Invoice (name or date)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -489,7 +489,7 @@ const InvoiceStatusModal = ({
               {showSearchResults &&
                 renderInvoiceList(
                   searchResults,
-                  `ผลการค้นหา (${searchResults.length} รายการ)`
+                  `Search Results (${searchResults.length} items)`
                 )}
 
               {/* Recent Invoices */}
@@ -498,33 +498,33 @@ const InvoiceStatusModal = ({
                   {loading ? (
                     <div className="text-center py-4">
                       <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
-                      <p className="mt-2 text-sm text-gray-600">กำลังโหลด...</p>
+                      <p className="mt-2 text-sm text-gray-600">Loading...</p>
                     </div>
                   ) : (
                     renderInvoiceList(
                       recentInvoices,
-                      "Invoice ล่าสุด (5 รายการ)"
+                      "Latest Invoices (5 items)"
                     )
                   )}
                 </>
               )}
             </div>
 
-            {/* ฝั่งขวา: รายละเอียด Invoice */}
+            {/* Right side: Invoice details */}
             <div>
               {selectedInvoice ? (
                 <div className="space-y-4">
                   {/* Invoice Info */}
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-medium text-gray-800 mb-2">
-                      ข้อมูล Invoice
+                      Invoice Information
                     </h4>
                     <p>
-                      <span className="font-medium">ชื่อ:</span>{" "}
+                      <span className="font-medium">Name:</span>{" "}
                       {selectedInvoice.invoice_name}
                     </p>
                     <p>
-                      <span className="font-medium">วันที่:</span>{" "}
+                      <span className="font-medium">Date:</span>{" "}
                       {selectedInvoice.invoice_date}
                     </p>
                     {selectedInvoice &&
@@ -538,8 +538,8 @@ const InvoiceStatusModal = ({
                         );
                         return (
                           <p>
-                            <span className="font-medium">ยอดรวม:</span>{" "}
-                            {(realTimeTotal - deduction).toLocaleString()} บาท
+                            <span className="font-medium">Total:</span>{" "}
+                            {(realTimeTotal - deduction).toLocaleString()} THB
                           </p>
                         );
                       })()}
@@ -548,7 +548,7 @@ const InvoiceStatusModal = ({
                   {/* Status Toggle */}
                   <div className="bg-white border rounded-lg p-4">
                     <h4 className="font-medium text-gray-800 mb-3">
-                      สถานะ Invoice
+                      Invoice Status
                     </h4>
                     <label className="inline-flex items-center cursor-pointer">
                       <input
@@ -562,7 +562,7 @@ const InvoiceStatusModal = ({
                           invoiceStatus ? "bg-green-500" : "bg-red-500"
                         }`}
                       >
-                        {invoiceStatus ? "เรียบร้อย" : "ไม่เรียบร้อย"}
+                        {invoiceStatus ? "Complete" : "Incomplete"}
                       </span>
                       <span
                         className={`relative inline-block w-10 h-5 rounded-full transition-colors duration-200 ease-in-out ${
@@ -580,13 +580,15 @@ const InvoiceStatusModal = ({
 
                   {/* File Upload */}
                   <div className="bg-white border rounded-lg p-4">
-                    <h4 className="font-medium text-gray-800 mb-3">ไฟล์แนบ</h4>
+                    <h4 className="font-medium text-gray-800 mb-3">
+                      Attachments
+                    </h4>
 
                     {/* Upload Button */}
                     <div className="mb-4">
                       <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
                         <Upload size={16} className="mr-2" />
-                        {uploading ? "กำลังอัพโหลด..." : "เลือกไฟล์"}
+                        {uploading ? "Uploading..." : "Select files"}
                         <input
                           type="file"
                           multiple
@@ -597,7 +599,7 @@ const InvoiceStatusModal = ({
                         />
                       </label>
                       <p className="text-xs text-gray-500 mt-1">
-                        รองรับ PDF, JPG, PNG (ไม่เกิน 5MB)
+                        Supports PDF, JPG, PNG (max 5MB)
                       </p>
                     </div>
 
@@ -619,7 +621,7 @@ const InvoiceStatusModal = ({
                                   {formatFileSize(file.size)}
                                 </p>
                                 <p className="text-xs text-blue-600">
-                                  คลิกปุ่ม "ดูตัวอย่าง" เพื่อดูไฟล์
+                                  Click "Preview" button to view files
                                 </p>
                               </div>
                             </div>
@@ -627,21 +629,21 @@ const InvoiceStatusModal = ({
                               <button
                                 onClick={() => handleDownloadFile(file)}
                                 className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"
-                                title="ดาวน์โหลด"
+                                title="Download"
                               >
                                 <Download size={16} />
                               </button>
                               <button
                                 onClick={() => handleFilePreview(file)}
                                 className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors"
-                                title="ดูตัวอย่าง"
+                                title="Preview"
                               >
                                 <Eye size={16} />
                               </button>
                               <button
                                 onClick={() => handleFileDelete(index)}
                                 className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"
-                                title="ลบ"
+                                title="Delete"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -655,7 +657,7 @@ const InvoiceStatusModal = ({
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <FileText size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>เลือก Invoice เพื่อจัดการสถานะและไฟล์แนบ</p>
+                  <p>Select an Invoice to manage status and attachments</p>
                 </div>
               )}
             </div>
@@ -669,7 +671,7 @@ const InvoiceStatusModal = ({
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
             >
-              ปิด
+              Close
             </button>
             <button
               onClick={handleSave}
@@ -697,12 +699,12 @@ const InvoiceStatusModal = ({
                       className="opacity-75"
                     />
                   </svg>
-                  กำลังบันทึก...
+                  Saving...
                 </span>
               ) : (
                 <>
                   <Save size={16} className="mr-2" />
-                  บันทึก
+                  Save
                 </>
               )}
             </button>
@@ -718,7 +720,7 @@ const InvoiceStatusModal = ({
               <div>
                 <h4 className="font-medium text-lg">{previewFile.name}</h4>
                 <p className="text-sm text-gray-500">
-                  ขนาด: {formatFileSize(previewFile.size)}
+                  Size: {formatFileSize(previewFile.size)}
                 </p>
               </div>
               <button
@@ -743,9 +745,9 @@ const InvoiceStatusModal = ({
                 </div>
               ) : previewFile.type.includes("pdf") ? (
                 <div className="h-full">
-                  {/* พยายามแสดง PDF ด้วยวิธีต่างๆ */}
+                  {/* Try to display PDF with various methods */}
                   <div className="h-full">
-                    {/* วิธีที่ 1: ใช้ embed tag */}
+                    {/* Method 1: Use embed tag */}
                     <embed
                       src={`${previewFile.url}#toolbar=1&navpanes=1&scrollbar=1`}
                       type="application/pdf"
@@ -755,13 +757,13 @@ const InvoiceStatusModal = ({
                       onError={(e) => {
                         console.log("Embed failed, trying iframe");
                         e.target.style.display = "none";
-                        // แสดง fallback
+                        // Show fallback
                         const fallback = e.target.nextElementSibling;
                         if (fallback) fallback.style.display = "block";
                       }}
                     />
 
-                    {/* วิธีที่ 2: Fallback - iframe */}
+                    {/* Method 2: Fallback - iframe */}
                     <div style={{ display: "none" }} className="h-full">
                       <iframe
                         src={`${previewFile.url}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
@@ -782,7 +784,7 @@ const InvoiceStatusModal = ({
                       />
                     </div>
 
-                    {/* วิธีที่ 3: Fallback - ปุ่มทางเลือก */}
+                    {/* Method 3: Fallback - Alternative buttons */}
                     <div
                       className="pdf-fallback text-center p-8"
                       style={{ display: "none" }}
@@ -792,10 +794,10 @@ const InvoiceStatusModal = ({
                         className="mx-auto mb-4 text-red-500"
                       />
                       <h3 className="text-xl font-medium mb-4">
-                        ไม่สามารถแสดง PDF ได้
+                        Unable to display PDF
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        เบราว์เซอร์ของคุณไม่รองรับการแสดง PDF โดยตรง
+                        Your browser does not support direct PDF display
                       </p>
 
                       <div className="space-y-4">
@@ -807,7 +809,7 @@ const InvoiceStatusModal = ({
                             className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                           >
                             <Eye size={20} className="mr-2" />
-                            เปิดใน Tab ใหม่
+                            Open in New Tab
                           </button>
 
                           <button
@@ -815,7 +817,7 @@ const InvoiceStatusModal = ({
                             className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                           >
                             <Download size={20} className="mr-2" />
-                            ดาวน์โหลด
+                            Download
                           </button>
                         </div>
 
@@ -860,10 +862,10 @@ const InvoiceStatusModal = ({
                 <div className="text-center py-12">
                   <FileText size={64} className="mx-auto mb-4 text-gray-400" />
                   <h3 className="text-lg font-medium mb-2">
-                    ไม่รองรับการแสดงตัวอย่าง
+                    Preview not supported
                   </h3>
                   <p className="text-gray-600 mb-4">
-                    ไฟล์ประเภท {previewFile.type}
+                    File type {previewFile.type}
                   </p>
                   <div className="space-x-4">
                     <button
@@ -871,21 +873,21 @@ const InvoiceStatusModal = ({
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
                     >
                       <Eye size={16} className="mr-2" />
-                      เปิดในหน้าใหม่
+                      Open in new page
                     </button>
                     <button
                       onClick={() => handleDownloadFile(previewFile)}
                       className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-flex items-center"
                     >
                       <Download size={16} className="mr-2" />
-                      ดาวน์โหลด
+                      Download
                     </button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Footer สำหรับ PDF */}
+            {/* Footer for PDF */}
             {previewFile.type.includes("pdf") && (
               <div className="p-3 bg-gray-50 border-t text-center">
                 <div className="flex justify-center space-x-4 text-sm">
@@ -894,14 +896,14 @@ const InvoiceStatusModal = ({
                     className="text-blue-600 hover:underline flex items-center"
                   >
                     <Eye size={14} className="mr-1" />
-                    เปิดใน Tab ใหม่
+                    Open in New Tab
                   </button>
                   <button
                     onClick={() => handleDownloadFile(previewFile)}
                     className="text-green-600 hover:underline flex items-center"
                   >
                     <Download size={14} className="mr-1" />
-                    ดาวน์โหลด
+                    Download
                   </button>
                   <button
                     onClick={() =>

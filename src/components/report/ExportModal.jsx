@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { th } from "date-fns/locale";
 import {
   X,
   CheckSquare,
@@ -120,31 +119,31 @@ const ExportModal = ({
   const getStatusInfo = (status) => {
     const statusMap = {
       pending: {
-        label: "รอดำเนินการ",
+        label: "Pending",
         color: "text-gray-600",
         bg: "bg-gray-100",
         icon: "⚫",
       },
       booked: {
-        label: "จองแล้ว",
+        label: "Booked",
         color: "text-blue-600",
         bg: "bg-blue-100",
         icon: "🔵",
       },
       in_progress: {
-        label: "ดำเนินการอยู่",
+        label: "In Progress",
         color: "text-yellow-600",
         bg: "bg-yellow-100",
         icon: "🟡",
       },
       completed: {
-        label: "เสร็จสมบูรณ์",
+        label: "Completed",
         color: "text-green-600",
         bg: "bg-green-100",
         icon: "🟢",
       },
       cancelled: {
-        label: "ยกเลิก",
+        label: "Cancelled",
         color: "text-red-600",
         bg: "bg-red-100",
         icon: "🔴",
@@ -374,13 +373,13 @@ const ExportModal = ({
               Export Preview
             </h2>
             <p className="text-gray-600 mt-1">
-              {format(new Date(selectedMonth), "MMMM yyyy", { locale: th })} (
-              {exportFormat === "combined" ? "รวม" : "แยก"} •{" "}
+              {format(new Date(selectedMonth), "MMMM yyyy")} (
+              {exportFormat === "combined" ? "Combined" : "Separate"} •{" "}
               {exportRange === "first_15"
-                ? "15 วันแรก"
+                ? "First 15 Days"
                 : exportRange === "last_15"
-                ? "15 วันหลัง"
-                : "ทั้งเดือน"}
+                ? "Last 15 Days"
+                : "Full Month"}
               )
             </p>
           </div>
@@ -396,14 +395,14 @@ const ExportModal = ({
         <div className="flex-1 overflow-y-auto p-6">
           {sortedDates.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              ไม่มีข้อมูลตามเงื่อนไขที่เลือก
+              No data matching the selected criteria
             </div>
           ) : (
             sortedDates.map((date) => (
               <div key={date} className="mb-6">
                 <div className="bg-gray-100 px-4 py-2 rounded-lg mb-3">
                   <h3 className="font-semibold text-gray-800">
-                    📅 วันที่ {formatDateDisplay(date)}
+                    📅 {formatDateDisplay(date)}
                   </h3>
                 </div>
 
@@ -480,25 +479,25 @@ const ExportModal = ({
                                 {booking.orders
                                   ? `${booking.orders.first_name || ""} ${
                                       booking.orders.last_name || ""
-                                    }`.trim() || "ไม่มีชื่อ"
-                                  : "ไม่มีชื่อ"}
+                                    }`.trim() || "No Name"
+                                  : "No Name"}
                               </p>
                               <p className="text-gray-600">
-                                Agent: {booking.orders?.agent_name || "ไม่ระบุ"}{" "}
-                                | จำนวน: {formatPax(booking)} คน | เวลา:{" "}
+                                Agent: {booking.orders?.agent_name || "N/A"}{" "}
+                                | Pax: {formatPax(booking)} | Time:{" "}
                                 {booking.type === "tour"
                                   ? booking.tour_pickup_time || "-"
                                   : booking.transfer_time || "-"}
                               </p>
                               {booking.type === "tour" ? (
                                 <p className="text-gray-500 text-xs">
-                                  โรงแรม: {booking.tour_hotel || "-"} |
-                                  รายละเอียด: {booking.tour_detail || "-"}
+                                  Hotel: {booking.tour_hotel || "-"} |
+                                  Details: {booking.tour_detail || "-"}
                                 </p>
                               ) : (
                                 <p className="text-gray-500 text-xs">
-                                  รับจาก: {booking.pickup_location || "-"} |
-                                  ส่งที่: {booking.drop_location || "-"}
+                                  Pickup: {booking.pickup_location || "-"} |
+                                  Drop: {booking.drop_location || "-"}
                                 </p>
                               )}
                             </div>
@@ -509,7 +508,7 @@ const ExportModal = ({
                               ฿{formatCurrency(booking.selling_price)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              ส่งใคร: {booking.send_to || "-"}
+                              Send To: {booking.send_to || "-"}
                             </p>
                           </div>
                         </div>
@@ -525,10 +524,10 @@ const ExportModal = ({
         {/* Footer */}
         <div className="flex justify-between items-center p-6 border-t bg-gray-50">
           <div className="text-sm text-gray-600">
-            เลือกแล้ว:{" "}
-            <span className="font-bold">{summary.selectedBookings}</span> รายการ
-            จากทั้งหมด{" "}
-            <span className="font-bold">{summary.totalBookings}</span> รายการ
+            Selected:{" "}
+            <span className="font-bold">{summary.selectedBookings}</span> items
+            out of{" "}
+            <span className="font-bold">{summary.totalBookings}</span> items
           </div>
 
           <div className="flex space-x-3">
@@ -536,7 +535,7 @@ const ExportModal = ({
               onClick={onCancel}
               className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
             >
-              ยกเลิก
+              Cancel
             </button>
             <button
               onClick={handleConfirmExport}
@@ -544,7 +543,7 @@ const ExportModal = ({
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               <FileSpreadsheet size={18} className="mr-2" />
-              Export ({summary.selectedBookings} รายการ)
+              Export ({summary.selectedBookings} items)
             </button>
           </div>
         </div>

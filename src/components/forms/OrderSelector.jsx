@@ -105,7 +105,7 @@ const OrderSelector = forwardRef(
         setIsLoading(false);
       } catch (err) {
         console.error("Error fetching orders:", err);
-        setError("ไม่สามารถโหลดข้อมูล Order ได้");
+        setError("Unable to load Order data");
         setIsLoading(false);
       }
     };
@@ -152,11 +152,11 @@ const OrderSelector = forwardRef(
                 value={selectedOption}
                 isLoading={isLoading}
                 isClearable
-                placeholder="เลือก Order..."
+                placeholder="Select Order..."
                 onChange={handleOrderChange}
                 className="text-left"
                 classNamePrefix="select"
-                noOptionsMessage={() => "ไม่พบข้อมูล Order"}
+                noOptionsMessage={() => "No Order found"}
                 isDisabled={isCreatingNewOrder}
               />
               {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
@@ -169,7 +169,7 @@ const OrderSelector = forwardRef(
                 onClick={handleCancelSelectOrder}
                 className="w-full md:w-auto px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition"
               >
-                ยกเลิกการเลือก
+                Cancel Selection
               </button>
             ) : isCreatingNewOrder ? (
               <button
@@ -177,7 +177,7 @@ const OrderSelector = forwardRef(
                 onClick={onCancelCreate}
                 className="w-full md:w-auto px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition"
               >
-                ยกเลิกการสร้าง
+                Cancel Creation
               </button>
             ) : (
               <button
@@ -185,7 +185,7 @@ const OrderSelector = forwardRef(
                 onClick={onCreateNewOrder}
                 className="w-full md:w-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
               >
-                สร้าง Order ใหม่
+                Create New Order
               </button>
             )}
           </div>

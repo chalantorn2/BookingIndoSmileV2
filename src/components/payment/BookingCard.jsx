@@ -70,13 +70,13 @@ const BookingCard = ({ booking, type, onAddBooking }) => {
 
             {isTour ? (
               <p className="text-sm text-gray-600 mt-1">
-                {booking.tour_hotel || "-"} | {formatPax(booking)} คน
+                {booking.tour_hotel || "-"} | {formatPax(booking)} people
               </p>
             ) : (
               <p className="text-sm flex items-center text-gray-600 mt-1">
                 {booking.pickup_location || "-"}{" "}
                 <ArrowRight size={12} className="mx-1" />{" "}
-                {booking.drop_location || "-"} | {formatPax(booking)} คน
+                {booking.drop_location || "-"} | {formatPax(booking)} people
               </p>
             )}
           </div>

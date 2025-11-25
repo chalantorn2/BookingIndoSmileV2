@@ -334,7 +334,7 @@ const ViewOrders = () => {
       {loading ? (
         <div className="text-center py-8 bg-white rounded-lg shadow-md">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+          <p className="mt-2 text-gray-600">Loading data...</p>
         </div>
       ) : error ? (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">

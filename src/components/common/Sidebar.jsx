@@ -207,7 +207,7 @@ const Sidebar = () => {
           className="flex items-center center p-1 pl-4 rounded-lg hover:bg-blue-800 transition-colors w-full"
         >
           <LogOut size={20} className="mr-3" />
-          {!collapsed && <span>ออกจากระบบ</span>}
+          {!collapsed && <span>Logout</span>}
         </button>
       </div>
     </div>

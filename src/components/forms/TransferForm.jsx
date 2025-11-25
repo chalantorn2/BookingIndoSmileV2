@@ -176,7 +176,7 @@ const TransferForm = ({
           onClick={() => onRemove(id)}
           className="bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded text-sm"
         >
-          ลบ
+          Remove
         </button>
       </div>
 
@@ -184,13 +184,13 @@ const TransferForm = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ประเภท
+              Type
             </label>
             <AutocompleteInput
               options={transferTypes}
               value={formData.transfer_type || ""}
               onChange={(value) => handleValueChange("transfer_type", value)}
-              placeholder="เลือกหรือพิมพ์ประเภทรถรับส่ง"
+              placeholder="Select or type transfer type"
               onAddNew={handleAddNewTransferType}
               name={`${fieldNamePrefix}type`}
               id={`${fieldNamePrefix}type`}
@@ -198,13 +198,13 @@ const TransferForm = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ส่งใคร
+              Send To
             </label>
             <AutocompleteInput
               options={transferRecipients}
               value={formData.send_to || ""}
               onChange={(value) => handleValueChange("send_to", value)}
-              placeholder="เลือกหรือพิมพ์ผู้รับ"
+              placeholder="Select or type recipient"
               onAddNew={handleAddNewRecipient}
               name={`${fieldNamePrefix}send_to`}
               id={`${fieldNamePrefix}send_to`}
@@ -213,22 +213,22 @@ const TransferForm = ({
         </div>
 
         <TextAreaField
-          label="รายละเอียด"
+          label="Details"
           name={`${fieldNamePrefix}detail`}
           value={formData.transfer_detail}
           onChange={(value) => handleValueChange("transfer_detail", value)}
-          placeholder="รายละเอียดเพิ่มเติม"
+          placeholder="Additional details"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              รับจาก
+              Pick up From
             </label>
             <AutocompleteInput
               options={places} // ใช้ places ทั้งหมดไม่ต้องกรอง
               value={formData.pickup_location || ""}
               onChange={(value) => handleValueChange("pickup_location", value)}
-              placeholder="เลือกหรือพิมพ์สถานที่รับ"
+              placeholder="Select or type pick up location"
               onAddNew={handleAddNewPickupLocation}
               name={`${fieldNamePrefix}pickup_location`}
               id={`${fieldNamePrefix}pickup_location`}
@@ -236,13 +236,13 @@ const TransferForm = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ไปส่งที่
+              Drop off At
             </label>
             <AutocompleteInput
               options={places} // ใช้ places ทั้งหมดไม่ต้องกรอง
               value={formData.drop_location || ""}
               onChange={(value) => handleValueChange("drop_location", value)}
-              placeholder="เลือกหรือพิมพ์สถานที่ส่ง"
+              placeholder="Select or type drop off location"
               onAddNew={handleAddNewDropLocation}
               name={`${fieldNamePrefix}drop_location`}
               id={`${fieldNamePrefix}drop_location`}
@@ -251,17 +251,17 @@ const TransferForm = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <InputField
-            label="เวลารับ"
+            label="Pick up Time"
             name={`${fieldNamePrefix}pickup_time`}
             value={formData.transfer_pickup_time}
             onChange={(value) =>
               handleValueChange("transfer_pickup_time", value)
             }
-            placeholder="เวลารับ"
+            placeholder="Pick up time"
           />
 
           <InputField
-            label="วันที่"
+            label="Date"
             name={`${fieldNamePrefix}date`}
             type="date"
             value={formData.transfer_date}
@@ -272,23 +272,23 @@ const TransferForm = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <InputField
-            label="เที่ยวบิน"
+            label="Flight"
             name={`${fieldNamePrefix}flight`}
             value={formData.transfer_flight}
             onChange={(value) => handleValueChange("transfer_flight", value)}
-            placeholder="เที่ยวบิน"
+            placeholder="Flight number"
           />
           <InputField
-            label="เวลาบิน"
+            label="Flight Time"
             name={`${fieldNamePrefix}ftime`}
             value={formData.transfer_ftime}
             onChange={(value) => handleValueChange("transfer_ftime", value)}
-            placeholder="เวลาบิน"
+            placeholder="Flight time"
           />
           <InputField
-            label="หมายเหตุ"
+            label="Note"
             name={`${fieldNamePrefix}note`}
-            placeholder="หมายเหตุเพิ่มเติม"
+            placeholder="Additional note"
             value={formData.note || ""}
             onChange={(newValue) => handleValueChange("note", newValue)}
           />

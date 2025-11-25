@@ -58,7 +58,7 @@ const CreateVoucher = () => {
 
       try {
         if (!bookingId || !bookingType) {
-          throw new Error("ไม่พบรหัส Booking หรือประเภท Booking");
+          throw new Error("Booking ID or Booking Type not found");
         }
 
         const tableName =
@@ -75,7 +75,7 @@ const CreateVoucher = () => {
           .single();
 
         if (error) throw error;
-        if (!data) throw new Error("ไม่พบข้อมูล Booking");
+        if (!data) throw new Error("Booking data not found");
 
         let initialVoucherData = {};
         if (isEditMode) {
@@ -113,7 +113,7 @@ const CreateVoucher = () => {
         setVoucherData(initialVoucherData);
       } catch (error) {
         console.error("Error fetching booking details:", error);
-        setError(error.message || "ไม่สามารถโหลดข้อมูล Booking ได้");
+        setError(error.message || "Unable to load Booking data");
       } finally {
         setLoading(false);
       }
@@ -135,7 +135,7 @@ const CreateVoucher = () => {
           updated_at: new Date().toISOString(),
         });
         if (result.error) throw new Error(result.error);
-        showSuccess("อัพเดต Voucher สำเร็จ");
+        showSuccess("Voucher updated successfully");
       } else {
         result = await createVoucher({
           ...voucherData,
@@ -143,7 +143,7 @@ const CreateVoucher = () => {
           booking_type: bookingType,
         });
         if (result.error) throw new Error(result.error);
-        showSuccess("สร้าง Voucher สำเร็จ");
+        showSuccess("Voucher created successfully");
       }
 
       setTimeout(() => {
@@ -151,7 +151,7 @@ const CreateVoucher = () => {
       }, 1500);
     } catch (error) {
       console.error("Error saving voucher:", error);
-      showError("ไม่สามารถบันทึก Voucher ได้: " + error.message);
+      showError("Unable to save Voucher: " + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -159,11 +159,11 @@ const CreateVoucher = () => {
 
   const getStatusText = (status) => {
     const statusMap = {
-      pending: "รอดำเนินการ",
-      booked: "จองแล้ว",
-      in_progress: "ดำเนินการอยู่",
-      completed: "เสร็จสมบูรณ์",
-      cancelled: "ยกเลิก",
+      pending: "Pending",
+      booked: "Booked",
+      in_progress: "In Progress",
+      completed: "Completed",
+      cancelled: "Cancelled",
     };
     return statusMap[status] || status;
   };
@@ -212,7 +212,7 @@ const CreateVoucher = () => {
         >
           <div className="flex justify-center items-center">
             <span className="text-xl font-semibold mr-2">
-              {isTour ? "รายละเอียดการจอง Tour" : "รายละเอียดการจอง Transfer"}
+              {isTour ? "Tour Booking Details" : "Transfer Booking Details"}
             </span>
             {booking.status && (
               <span
@@ -232,18 +232,18 @@ const CreateVoucher = () => {
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-lg font-medium flex items-center">
                   <User size={18} className="mr-2 text-gray-600" />
-                  ข้อมูล Order
+                  Order Information
                 </h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">รหัส Order:</p>
+                  <p className="text-sm text-gray-600">Order ID:</p>
                   <p className="font-medium">
                     {booking.orders.reference_id || `#${booking.orders.id}`}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">ชื่อลูกค้า:</p>
+                  <p className="text-sm text-gray-600">Customer Name:</p>
                   <p className="font-medium">
                     {booking.orders.first_name} {booking.orders.last_name}
                   </p>
@@ -261,17 +261,17 @@ const CreateVoucher = () => {
           <div>
             <h4 className="text-lg font-medium mb-3 pb-2 border-b border-gray-200 flex items-center">
               <Calendar size={18} className="mr-2 text-blue-600" />
-              รายละเอียดข้อมูล Booking
+              Booking Details
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-gray-600">รหัสการจอง:</p>
+                <p className="text-sm text-gray-600">Booking ID:</p>
                 <p className="font-medium">
                   {booking.reference_id || `#${booking.id}`}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">วันที่:</p>
+                <p className="text-sm text-gray-600">Date:</p>
                 <p className="font-medium">
                   {isTour
                     ? formatDateDisplay(booking.tour_date)
@@ -279,79 +279,79 @@ const CreateVoucher = () => {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">สถานะ:</p>
+                <p className="text-sm text-gray-600">Status:</p>
                 <p className="font-medium">
                   {getStatusText(booking.status || "pending")}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">จำนวนคน:</p>
+                <p className="text-sm text-gray-600">Number of People:</p>
                 <p className="font-medium">{formatPax(booking)}</p>
               </div>
 
               {isTour ? (
                 <>
                   <div>
-                    <p className="text-sm text-gray-600">ประเภททัวร์:</p>
+                    <p className="text-sm text-gray-600">Tour Type:</p>
                     <p className="font-medium">{booking.tour_type || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">ส่งใคร:</p>
+                    <p className="text-sm text-gray-600">Send To:</p>
                     <p className="font-medium">{booking.send_to || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">เวลารับ:</p>
+                    <p className="text-sm text-gray-600">Pick up Time:</p>
                     <p className="font-medium">
                       {booking.tour_pickup_time || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">โรงแรม:</p>
+                    <p className="text-sm text-gray-600">Hotel:</p>
                     <p className="font-medium">{booking.tour_hotel || "-"}</p>
                   </div>
                   <div className="col-span-4">
-                    <p className="text-sm text-gray-600">รายละเอียด:</p>
+                    <p className="text-sm text-gray-600">Details:</p>
                     <p className="font-medium">{booking.tour_detail || "-"}</p>
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <p className="text-sm text-gray-600">ประเภทการรับส่ง:</p>
+                    <p className="text-sm text-gray-600">Transfer Type:</p>
                     <p className="font-medium">
                       {booking.transfer_type || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">ส่งใคร:</p>
+                    <p className="text-sm text-gray-600">Send To:</p>
                     <p className="font-medium">{booking.send_to || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">เวลารับ:</p>
+                    <p className="text-sm text-gray-600">Pick up Time:</p>
                     <p className="font-medium">
                       {booking.transfer_time || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">สถานที่รับ:</p>
+                    <p className="text-sm text-gray-600">Pick up Location:</p>
                     <p className="font-medium">
                       {booking.pickup_location || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">สถานที่ส่ง:</p>
+                    <p className="text-sm text-gray-600">Drop off Location:</p>
                     <p className="font-medium">
                       {booking.drop_location || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">เที่ยวบิน:</p>
+                    <p className="text-sm text-gray-600">Flight:</p>
                     <p className="font-medium">
                       {booking.transfer_flight || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">รายละเอียด:</p>
+                    <p className="text-sm text-gray-600">Details:</p>
                     <p className="font-medium">
                       {booking.transfer_detail || "-"}
                     </p>
@@ -368,19 +368,19 @@ const CreateVoucher = () => {
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-gray-600">ราคาต้นทุน:</p>
+                <p className="text-sm text-gray-600">Cost Price:</p>
                 <p className="font-medium">
                   {booking.cost_price ? `${booking.cost_price} บาท` : "-"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">ราคาขาย:</p>
+                <p className="text-sm text-gray-600">Selling Price:</p>
                 <p className="font-medium">
                   {booking.selling_price ? `${booking.selling_price} บาท` : "-"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">กำไร:</p>
+                <p className="text-sm text-gray-600">Profit:</p>
                 <p className="font-medium">
                   {booking.cost_price && booking.selling_price
                     ? `${(booking.selling_price - booking.cost_price).toFixed(
@@ -390,7 +390,7 @@ const CreateVoucher = () => {
                 </p>
               </div>
               <div className="mt-4">
-                <p className="text-sm text-gray-600">หมายเหตุ:</p>
+                <p className="text-sm text-gray-600">Note:</p>
                 <p className="font-medium">{booking.note || "-"}</p>
               </div>
             </div>
@@ -404,7 +404,7 @@ const CreateVoucher = () => {
     <div className="container mx-auto px-4 py-6 bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">
-          {isEditMode ? "แก้ไข Voucher" : "สร้าง Voucher"}
+          {isEditMode ? "Edit Voucher" : "Create Voucher"}
         </h1>
         <button
           onClick={() => navigate(-1)}
@@ -418,7 +418,7 @@ const CreateVoucher = () => {
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+          <p className="mt-2 text-gray-600">Loading data...</p>
         </div>
       ) : error ? (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">

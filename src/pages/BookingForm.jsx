@@ -173,7 +173,7 @@ const BookingForm = () => {
       setTransferForms([]);
     } catch (error) {
       console.error("Error loading order details:", error);
-      setStatus({ ...status, error: "ไม่สามารถโหลดข้อมูล Order ได้" });
+      setStatus({ ...status, error: "Unable to load Order data" });
     } finally {
       setStatus({ ...status, loading: false });
     }
@@ -251,12 +251,12 @@ const BookingForm = () => {
 
       if (!mainFormData.agent) {
         throw new Error(
-          "กรุณากรอก Agent ก่อน เพื่อใช้เป็น prefix ของ Order ID"
+          "Please enter Agent first to use as Order ID prefix"
         );
       }
       if (tourForms.length === 0 && transferForms.length === 0) {
         throw new Error(
-          "กรุณาเพิ่มการจอง Tour หรือ Transfer อย่างน้อย 1 รายการ"
+          "Please add at least 1 Tour or Transfer booking"
         );
       }
 
@@ -297,7 +297,7 @@ const BookingForm = () => {
           .single();
 
         if (orderError) throw orderError;
-        if (!newOrder) throw new Error("ไม่สามารถสร้าง Order ใหม่ได้");
+        if (!newOrder) throw new Error("Unable to create new Order");
 
         orderKey = newOrder.id;
         console.log("Order created with ID:", orderKey);
@@ -351,7 +351,7 @@ const BookingForm = () => {
         const tourDateElement = formElements[`tour_${formId}_date`];
         const tourDate = tourDateElement ? tourDateElement.value : "";
         if (!tourDate) {
-          throw new Error(`Tour ${formId} ต้องระบุวันที่`);
+          throw new Error(`Tour ${formId} must specify a date`);
         }
         if (tourDate) allDates.push(tourDate);
 
@@ -397,7 +397,7 @@ const BookingForm = () => {
           ? transferDateElement.value
           : "";
         if (!transferDate) {
-          throw new Error(`Transfer ${formId} ต้องระบุวันที่`);
+          throw new Error(`Transfer ${formId} must specify a date`);
         }
         if (transferDate) allDates.push(transferDate);
 
@@ -476,7 +476,7 @@ const BookingForm = () => {
       }
 
       showSuccess(
-        `บันทึกข้อมูลสำเร็จ! Tour: ${tourBookings.length}, Transfer: ${transferBookings.length}`
+        `Data saved successfully! Tour: ${tourBookings.length}, Transfer: ${transferBookings.length}`
       );
       setStatus({ loading: false, error: "" });
       console.log("Submit success, message set: ");
@@ -493,7 +493,7 @@ const BookingForm = () => {
       setStatus({
         loading: false,
         message: "",
-        error: `เกิดข้อผิดพลาด: ${error.message}`,
+        error: `Error occurred: ${error.message}`,
       });
     }
   };
@@ -509,11 +509,11 @@ const BookingForm = () => {
       mainFormData.paxInf !== "0"
     ) {
       const confirmed = await showAlert({
-        title: "ยืนยันการยกเลิก",
+        title: "Confirm Cancellation",
         description:
-          "คุณต้องการยกเลิกการสร้าง Order ใหม่ใช่หรือไม่? ข้อมูลที่กรอกจะหายไป",
-        confirmText: "ยกเลิก",
-        cancelText: "กลับไปกรอกข้อมูลต่อ",
+          "Do you want to cancel creating a new Order? All entered data will be lost",
+        confirmText: "Cancel",
+        cancelText: "Continue Editing",
         actionVariant: "destructive",
       });
 
@@ -534,15 +534,15 @@ const BookingForm = () => {
     <div className="container mx-auto px-4 py-6 bg-gray-50 min-h-screen">
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          เพิ่มรายการจอง
+          Add Booking
         </h1>
         <p className="text-gray-600 mb-4">
-          กรุณาเลือกฟอร์มที่ต้องการกรอก หรือสร้างรายการจองใหม่
+          Please select a form to fill out or create a new booking
         </p>
       </div>
 
       <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h2 className="text-xl font-bold text-center mb-4">เลือก Order</h2>
+        <h2 className="text-xl font-bold text-center mb-4">Select Order</h2>
         <div className="flex flex-col md:flex-row items-center justify-center gap-4">
           <div className="w-full md:w-2/3">
             <OrderSelector
@@ -560,7 +560,7 @@ const BookingForm = () => {
       {isBookingSectionVisible && (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8 transition-all duration-300">
           <div className="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-4 text-center">
-            <h2 className="text-xl font-semibold">ข้อมูลหลักของ Booking</h2>
+            <h2 className="text-xl font-semibold">Main Booking Information</h2>
             {currentOrderId && (
               <p className="text-gray-200 text-sm mt-1">
                 Order ID: {currentOrderId}
@@ -571,16 +571,16 @@ const BookingForm = () => {
           {bookingCounts && (
             <div className="bg-gray-100 p-3 border-b border-gray-200">
               <p className="text-center text-gray-700">
-                Order นี้มี{" "}
+                This order has{" "}
                 <span className="font-bold text-green-600">
-                  {bookingCounts.tourCount} ทัวร์
+                  {bookingCounts.tourCount} tour(s)
                 </span>{" "}
-                และ
+                and
                 <span className="font-bold text-blue-600">
                   {" "}
-                  {bookingCounts.transferCount} รถรับส่ง
+                  {bookingCounts.transferCount} transfer(s)
                 </span>{" "}
-                อยู่แล้ว
+                already
               </p>
             </div>
           )}
@@ -598,7 +598,7 @@ const BookingForm = () => {
                     options={agents}
                     value={mainFormData.agent}
                     onChange={handleAgentChange}
-                    placeholder="เลือกหรือพิมพ์ชื่อ Agent"
+                    placeholder="Select or type Agent name"
                     onAddNew={handleAddNewAgent}
                     name="agent"
                     id="agent"
@@ -618,7 +618,7 @@ const BookingForm = () => {
                     value={mainFormData.paxAdt}
                     onChange={handleMainFormChange}
                     className="w-full border p-2 rounded-md border-gray-300 text-right shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    placeholder="จำนวนผู้ใหญ่"
+                    placeholder="Number of adults"
                     min="0"
                     required
                   />
@@ -637,7 +637,7 @@ const BookingForm = () => {
                     value={mainFormData.paxChd}
                     onChange={handleMainFormChange}
                     className="w-full border p-2 rounded-md border-gray-300 text-right shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    placeholder="จำนวนเด็ก"
+                    placeholder="Number of children"
                     min="0"
                   />
                 </div>
@@ -655,7 +655,7 @@ const BookingForm = () => {
                     value={mainFormData.paxInf}
                     onChange={handleMainFormChange}
                     className="w-full border p-2 rounded-md border-gray-300 text-right shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    placeholder="จำนวนทารก"
+                    placeholder="Number of infants"
                     min="0"
                   />
                 </div>
@@ -676,7 +676,7 @@ const BookingForm = () => {
                     value={mainFormData.firstName}
                     onChange={handleMainFormChange}
                     className="w-full border p-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    placeholder="ชื่อลูกค้า"
+                    placeholder="Customer first name"
                     required
                   />
                 </div>
@@ -694,7 +694,7 @@ const BookingForm = () => {
                     value={mainFormData.lastName}
                     onChange={handleMainFormChange}
                     className="w-full border p-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    placeholder="นามสกุลลูกค้า"
+                    placeholder="Customer last name"
                     required
                   />
                 </div>
@@ -720,7 +720,7 @@ const BookingForm = () => {
                       d="M12 4v16m8-8H4"
                     />
                   </svg>
-                  เพิ่มทัวร์
+                  Add Tour
                 </button>
 
                 <button
@@ -742,7 +742,7 @@ const BookingForm = () => {
                       d="M12 4v16m8-8H4"
                     />
                   </svg>
-                  เพิ่มรถรับส่ง
+                  Add Transfer
                 </button>
               </div>
 
@@ -822,7 +822,7 @@ const BookingForm = () => {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             ></path>
                           </svg>
-                          กำลังบันทึก...
+                          Saving...
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -840,7 +840,7 @@ const BookingForm = () => {
                               d="M5 13l4 4L19 7"
                             />
                           </svg>
-                          บันทึกข้อมูล
+                          Save Data
                         </div>
                       )}
                     </button>

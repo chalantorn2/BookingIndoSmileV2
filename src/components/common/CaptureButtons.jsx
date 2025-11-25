@@ -63,12 +63,12 @@ const CaptureButtons = ({
   // แคปเป็นไฟล์รูปภาพ
   const captureAsImage = () => {
     if (!targetRef.current) {
-      showError("ไม่พบองค์ประกอบสำหรับแคปภาพ");
+      showError("Element not found for capture");
       return;
     }
 
     setIsCapturing(true);
-    showInfo("กำลังสร้างรูปภาพ กรุณารอสักครู่...");
+    showInfo("Creating image, please wait...");
 
     const scale = options.scale || 2;
     const style = {
@@ -100,24 +100,24 @@ const CaptureButtons = ({
         link.click();
         URL.revokeObjectURL(url);
         setIsCapturing(false);
-        showSuccess("บันทึกภาพเรียบร้อยแล้ว");
+        showSuccess("Image saved successfully");
       })
       .catch(function (error) {
-        console.error("แคปภาพไม่สำเร็จ:", error);
+        console.error("Capture failed:", error);
         setIsCapturing(false);
-        showError("เกิดข้อผิดพลาดในการแคปภาพ");
+        showError("Error capturing image");
       });
   };
 
   // คัดลอกภาพไปยัง clipboard
   const copyToClipboard = () => {
     if (!targetRef.current) {
-      showError("ไม่พบองค์ประกอบสำหรับแคปภาพ");
+      showError("Element not found for capture");
       return;
     }
 
     setIsCapturing(true);
-    showInfo("กำลังคัดลอกรูปภาพ กรุณารอสักครู่...");
+    showInfo("Copying image, please wait...");
 
     const scale = options.scale || 2;
     const style = {
@@ -147,18 +147,18 @@ const CaptureButtons = ({
           .write([item])
           .then(() => {
             setIsCapturing(false);
-            showSuccess("คัดลอกรูปภาพไปยังคลิปบอร์ดแล้ว");
+            showSuccess("Image copied to clipboard");
           })
           .catch((err) => {
-            console.error("คัดลอกไปยังคลิปบอร์ดไม่สำเร็จ:", err);
+            console.error("Copy to clipboard failed:", err);
             setIsCapturing(false);
-            showError("ไม่สามารถคัดลอกไปยังคลิปบอร์ดได้");
+            showError("Unable to copy to clipboard");
           });
       })
       .catch(function (error) {
-        console.error("สร้างรูปภาพไม่สำเร็จ:", error);
+        console.error("Image creation failed:", error);
         setIsCapturing(false);
-        showError("เกิดข้อผิดพลาดในการสร้างรูปภาพ");
+        showError("Error creating image");
       });
   };
 
@@ -182,7 +182,7 @@ const CaptureButtons = ({
             size={config.iconSize[size]}
             className={`animate-spin ${config.iconClass}`}
           />
-          {config.showLabels && <span>กำลังดำเนินการ</span>}
+          {config.showLabels && <span>Processing</span>}
         </>
       );
     }
@@ -195,7 +195,7 @@ const CaptureButtons = ({
               size={config.iconSize[size]}
               className={config.iconClass}
             />
-            {config.showLabels && <span>บันทึก</span>}
+            {config.showLabels && <span>Save</span>}
           </>
         );
       case "copy":
@@ -203,7 +203,7 @@ const CaptureButtons = ({
         return (
           <>
             <Camera size={config.iconSize[size]} className={config.iconClass} />
-            {config.showLabels && <span>แคปภาพ</span>}
+            {config.showLabels && <span>Capture</span>}
           </>
         );
     }
@@ -230,7 +230,7 @@ const CaptureButtons = ({
           onClick={copyToClipboard}
           disabled={isCapturing}
           className={`flex items-center justify-center rounded-md ${config.buttonSize[size]} ${config.secondaryButtonStyle} ${config.hoverEffect}`}
-          title="คัดลอกไปคลิปบอร์ด"
+          title="Copy to clipboard"
         >
           {isCapturing ? (
             <>
@@ -238,7 +238,7 @@ const CaptureButtons = ({
                 size={config.iconSize[size]}
                 className={`animate-spin ${config.iconClass}`}
               />
-              {config.showLabels && <span>กำลังดำเนินการ</span>}
+              {config.showLabels && <span>Processing</span>}
             </>
           ) : (
             <>
@@ -246,7 +246,7 @@ const CaptureButtons = ({
                 size={config.iconSize[size]}
                 className={config.iconClass}
               />
-              {config.showLabels && <span>คัดลอก</span>}
+              {config.showLabels && <span>Copy</span>}
             </>
           )}
         </button>
@@ -257,7 +257,7 @@ const CaptureButtons = ({
           onClick={captureAsImage}
           disabled={isCapturing}
           className={`flex items-center justify-center rounded-md ${config.buttonSize[size]} ${config.secondaryButtonStyle} ${config.hoverEffect}`}
-          title="บันทึกเป็นรูปภาพ"
+          title="Save as image"
         >
           {isCapturing ? (
             <>
@@ -265,7 +265,7 @@ const CaptureButtons = ({
                 size={config.iconSize[size]}
                 className={`animate-spin ${config.iconClass}`}
               />
-              {config.showLabels && <span>กำลังดำเนินการ</span>}
+              {config.showLabels && <span>Processing</span>}
             </>
           ) : (
             <>
@@ -273,7 +273,7 @@ const CaptureButtons = ({
                 size={config.iconSize[size]}
                 className={config.iconClass}
               />
-              {config.showLabels && <span>บันทึก</span>}
+              {config.showLabels && <span>Save</span>}
             </>
           )}
         </button>

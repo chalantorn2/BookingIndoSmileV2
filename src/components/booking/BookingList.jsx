@@ -53,12 +53,12 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   const getAgentInfo = (booking) => {
     if (!booking) {
       console.warn(`Booking is undefined or null`);
-      return { name: "ไม่ระบุ Agent", phone: "" };
+      return { name: "No Agent", phone: "" };
     }
 
     if (!booking.orders) {
       console.warn(`Booking ID: ${booking.id} has no orders data`, booking);
-      return { name: "ไม่ระบุ Agent", phone: "" };
+      return { name: "No Agent", phone: "" };
     }
 
     if (booking.orders.agent_info) {
@@ -67,7 +67,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
         booking.orders.agent_info
       );
       return {
-        name: booking.orders.agent_info.value || "ไม่ระบุ Agent",
+        name: booking.orders.agent_info.value || "No Agent",
         phone: booking.orders.agent_info.phone || "",
       };
     }
@@ -84,7 +84,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
     }
 
     console.warn(`No agent information found for booking ID: ${booking.id}`);
-    return { name: "ไม่ระบุ Agent", phone: "" };
+    return { name: "No Agent", phone: "" };
   };
 
   const getPlaceInfo = (placeName, bookingType) => {
@@ -97,7 +97,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
 
     if (!placeName) {
       console.log("🔍 No placeName provided");
-      return { name: "ไม่มีข้อมูล", phone: "" };
+      return { name: "No data", phone: "" };
     }
 
     const recipients =
@@ -119,7 +119,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
     if (recipient) {
       console.log("🔍 Found recipient data:", recipient);
       return {
-        name: recipient.value || "ไม่ระบุชื่อ",
+        name: recipient.value || "No name",
         phone: recipient.phone || "",
       };
     }
@@ -129,7 +129,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
   };
 
   const formatWithPhone = (name, phone) => {
-    if (!name || name === "ไม่ระบุ Agent") return "ไม่ระบุ Agent";
+    if (!name || name === "No Agent") return "No Agent";
     if (phone) {
       return `${name} ${phone}`;
     }
@@ -158,7 +158,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       <div className="text-center py-4">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-gray-300 border-r-blue-500"></div>
         <p className="mt-2 text-gray-600">
-          {preventTextWrap("กำลังโหลดข้อมูล...")}
+          {preventTextWrap("Loading...")}
         </p>
       </div>
     );
@@ -176,7 +176,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
     return (
       <div className="text-center py-6 text-gray-500">
         {preventTextWrap(
-          `ไม่พบข้อมูลการจอง${type === "tour" ? "Tour" : "Transfer"}`
+          `No ${type === "tour" ? "Tour" : "Transfer"} bookings found`
         )}
       </div>
     );
@@ -201,11 +201,11 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
 
   const translateStatus = (status) => {
     const statusMap = {
-      pending: "รอดำเนินการ",
-      booked: "จองแล้ว",
-      in_progress: "ดำเนินการอยู่",
-      completed: "เสร็จสมบูรณ์",
-      cancelled: "ยกเลิก",
+      pending: "Pending",
+      booked: "Booked",
+      in_progress: "In Progress",
+      completed: "Completed",
+      cancelled: "Cancelled",
     };
     return statusMap[status] || status;
   };
@@ -251,7 +251,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
       {sortedBookings.map((booking, index) => {
         const firstName = booking.orders?.first_name || "";
         const lastName = booking.orders?.last_name || "";
-        const customerName = `${firstName} ${lastName}`.trim() || "ไม่มีชื่อ";
+        const customerName = `${firstName} ${lastName}`.trim() || "No name";
 
         const bookingCaptureRef = useRef(null);
         const agentInfo = getAgentInfo(booking);
@@ -317,7 +317,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                     {preventTextWrap(`${index + 1}.`)}
                     <User size={18} className="text-gray-500" />
                     <span className="flex items-center w-150 mr-2  0">
-                      {preventTextWrap(customerName)} | {formatPax(booking)} คน
+                      {preventTextWrap(customerName)} | {formatPax(booking)} pax
                     </span>
                   </div>
                 </div>
@@ -361,7 +361,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center mr-2">
                             <Hotel size={16} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>{preventTextWrap("โรงแรม:")}</b>{" "}
+                              <b>{preventTextWrap("Hotel:")}</b>{" "}
                               {preventTextWrap(booking.tour_hotel || "-")}
                             </span>
                           </div>
@@ -372,7 +372,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                                 className="mr-1 flex-shrink-0"
                               />
                               <span>
-                                <b>{preventTextWrap("ห้อง:")}</b>{" "}
+                                <b>{preventTextWrap("Room:")}</b>{" "}
                                 {preventTextWrap(booking.tour_room_no)}
                               </span>
                             </div>
@@ -390,7 +390,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                               maxWidth: "500px",
                             }}
                           >
-                            <b>{preventTextWrap("รายละเอียด:")}</b>{" "}
+                            <b>{preventTextWrap("Details:")}</b>{" "}
                             {booking.tour_detail || "-"}
                           </div>
                         </div>
@@ -403,14 +403,14 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center mr-2">
                             <MapPin size={14} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>{preventTextWrap("รับจาก:")}</b>{" "}
+                              <b>{preventTextWrap("Pick up:")}</b>{" "}
                               {preventTextWrap(booking.pickup_location || "-")}
                             </span>
                           </div>
                           <div className="flex items-center">
                             <MapPin size={14} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>{preventTextWrap("ส่งที่:")}</b>{" "}
+                              <b>{preventTextWrap("Drop off:")}</b>{" "}
                               {preventTextWrap(booking.drop_location || "-")}
                             </span>
                           </div>
@@ -421,7 +421,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center mr-2">
                             <Plane size={16} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>{preventTextWrap("ไฟลต์:")}</b>{" "}
+                              <b>{preventTextWrap("Flight:")}</b>{" "}
                               {preventTextWrap(booking.transfer_flight)}
                             </span>
                           </div>
@@ -430,7 +430,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                           <div className="flex items-center">
                             <Clock size={14} className="mr-1 flex-shrink-0" />
                             <span>
-                              <b>{preventTextWrap("เวลาบิน:")}</b>{" "}
+                              <b>{preventTextWrap("Flight time:")}</b>{" "}
                               {preventTextWrap(booking.transfer_ftime)}
                             </span>
                           </div>
@@ -447,7 +447,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                               maxWidth: "500px",
                             }}
                           >
-                            <b>{preventTextWrap("รายละเอียด:")}</b>{" "}
+                            <b>{preventTextWrap("Details:")}</b>{" "}
                             {booking.transfer_detail || "-"}
                           </div>
                         </div>
@@ -459,13 +459,13 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                   <div className="flex items-center gap-2 text-sm flex-1">
                     <span
                       className={`font-medium ${
-                        agentInfo.name === "ไม่ระบุ Agent"
+                        agentInfo.name === "No Agent"
                           ? "text-gray-500"
                           : ""
                       }`}
                     >
                       {preventTextWrap(
-                        `จาก: ${formatWithPhone(
+                        `From: ${formatWithPhone(
                           agentInfo.name,
                           agentInfo.phone
                         )}`
@@ -474,7 +474,7 @@ const BookingList = ({ bookings, type, isLoading, error, onViewDetails }) => {
                     <span>{preventTextWrap("|")}</span>
                     <span className="font-medium text-balance w-full">
                       {preventTextWrap(
-                        `ส่ง: ${formatWithPhone(
+                        `To: ${formatWithPhone(
                           sendToInfo.name,
                           sendToInfo.phone
                         )}`

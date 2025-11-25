@@ -116,10 +116,10 @@ const AutocompleteInput = ({
   // เมื่อคลิกปุ่มเพิ่มข้อมูลใหม่
   const handleAddNewClick = async () => {
     const confirmed = await showAlert({
-      title: "ยืนยันการเพิ่มข้อมูล",
-      description: `คุณต้องการเพิ่ม "${inputValue}" เป็นข้อมูลใหม่ใช่หรือไม่?`,
-      confirmText: "เพิ่ม",
-      cancelText: "ยกเลิก",
+      title: "Confirm Add Data",
+      description: `Do you want to add "${inputValue}" as new data?`,
+      confirmText: "Add",
+      cancelText: "Cancel",
       actionVariant: "success", // ใช้สีเขียวสำหรับปุ่มเพิ่ม
     });
 
@@ -149,14 +149,14 @@ const AutocompleteInput = ({
         // แสดงข้อความแจ้งเตือน
         setTimeout(() => {
           showSuccess(
-            `เพิ่มข้อมูล "${result.value}" ลงใน Information เรียบร้อยแล้ว`
+            `Added "${result.value}" to Information successfully`
           );
         }, 100);
       }
     } catch (error) {
       console.error("Error adding new item:", error);
       showError(
-        `เกิดข้อผิดพลาด: ${error.message || "ไม่สามารถเพิ่มข้อมูลได้"}`
+        `Error occurred: ${error.message || "Unable to add data"}`
       );
     } finally {
       setIsLoading(false);
@@ -176,7 +176,7 @@ const AutocompleteInput = ({
         handleOptionClick(filteredOptions[0]);
       } else if (inputValue && !selectedOption) {
         showInfo(
-          'ไม่พบข้อมูลที่ตรงกัน กรุณาคลิกที่ปุ่ม "เพิ่ม" เพื่อเพิ่มข้อมูลใหม่'
+          'No matching data found. Please click "Add" button to add new data'
         );
       }
     } else if (e.key === "Escape") {
@@ -246,7 +246,7 @@ const AutocompleteInput = ({
             onChange={(e) => setNewValue(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full border p-2 rounded-md border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="พิมพ์ข้อมูลใหม่..."
+            placeholder="Type new data..."
             autoFocus
           />
           <button
@@ -277,7 +277,7 @@ const AutocompleteInput = ({
                 ></path>
               </svg>
             ) : (
-              "เพิ่ม"
+              "Add"
             )}
           </button>
           <button
@@ -285,7 +285,7 @@ const AutocompleteInput = ({
             onClick={() => setIsAdding(false)}
             className="px-3 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
           >
-            ยกเลิก
+            Cancel
           </button>
         </div>
       )}

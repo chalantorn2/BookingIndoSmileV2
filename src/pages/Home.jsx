@@ -34,7 +34,7 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState("all");
 
-  // Ref สำหรับพื้นที่แคปภาพ
+  // Ref for capture area
   const captureAreaRef = useRef(null);
 
   // Format the selected date for display
@@ -52,7 +52,7 @@ const Home = () => {
     setError(null);
 
     try {
-      // Query สำหรับ tour bookings
+      // Query for tour bookings
       const { data: tourData, error: tourError } = await supabase
         .from("tour_bookings")
         .select(
@@ -76,7 +76,7 @@ const Home = () => {
 
       if (tourError) throw tourError;
 
-      // Query สำหรับ transfer bookings
+      // Query for transfer bookings
       const { data: transferData, error: transferError } = await supabase
         .from("transfer_bookings")
         .select(
@@ -100,7 +100,7 @@ const Home = () => {
 
       if (transferError) throw transferError;
 
-      // ดึงข้อมูล agent จาก information table แยกต่างหาก
+      // Fetch agent data from information table separately
       const allAgentIds = [
         ...tourData.map((booking) => booking.orders?.agent_id).filter(Boolean),
         ...transferData
@@ -125,7 +125,7 @@ const Home = () => {
         }
       }
 
-      // เพิ่มข้อมูล agent เข้าไปในแต่ละ booking
+      // Add agent info to each booking
       const enrichedTourData = tourData.map((booking) => ({
         ...booking,
         orders: {
@@ -160,7 +160,7 @@ const Home = () => {
       setTransferBookings(sortedTransferData);
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      setError("ไม่สามารถโหลดข้อมูลการจองได้");
+      setError("Unable to load booking data");
     } finally {
       setIsLoading(false);
     }
@@ -252,7 +252,7 @@ const Home = () => {
       }
     } catch (error) {
       console.error("Export error:", error);
-      showError("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
+      showError("Error exporting data");
     }
   };
 
@@ -260,8 +260,8 @@ const Home = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">รายการจอง</h1>
-          <p className="text-gray-600">เลือกวันที่เพื่อดูรายการจอง</p>
+          <h1 className="text-3xl font-bold text-gray-800">Booking List</h1>
+          <p className="text-gray-600">Select a date to view bookings</p>
         </div>
 
         <CalendarHighlight
@@ -271,9 +271,9 @@ const Home = () => {
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-4 font-Prompt">
-            {/* ส่วนแสดงตัวกรองสถานะและปุ่มแคปภาพ */}
+            {/* Filter status and capture buttons section */}
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-white rounded-lg p-4 border border-gray-100">
-              {/* ปุ่มแคปภาพ (ซ้าย) */}
+              {/* Capture buttons (left) */}
 
               <div className="flex gap-2 mb-2 sm:mb-0 print-hidden">
                 <CaptureButtons
@@ -298,18 +298,18 @@ const Home = () => {
                   context="home"
                 />
 
-                {/* เพิ่มปุ่ม Export Excel */}
+                {/* Export Excel button */}
                 <button
                   onClick={handleExportExcel}
                   className="flex items-center p-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
-                  title="ส่งออก Excel"
+                  title="Export Excel"
                 >
                   <FileSpreadsheet size={18} />
                   <span>Excel</span>
                 </button>
               </div>
 
-              {/* ปุ่มตัวกรองสถานะ (ขวา) */}
+              {/* Filter status buttons (right) */}
               <div className="flex flex-wrap justify-center sm:justify-end gap-2">
                 <button
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -319,7 +319,7 @@ const Home = () => {
                   }`}
                   onClick={() => setFilter("all")}
                 >
-                  ทั้งหมด
+                  All
                 </button>
                 <button
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -329,7 +329,7 @@ const Home = () => {
                   }`}
                   onClick={() => setFilter("pending")}
                 >
-                  รอดำเนินการ
+                  Pending
                 </button>
                 <button
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -339,7 +339,7 @@ const Home = () => {
                   }`}
                   onClick={() => setFilter("booked")}
                 >
-                  จองแล้ว
+                  Booked
                 </button>
                 <button
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -349,7 +349,7 @@ const Home = () => {
                   }`}
                   onClick={() => setFilter("in_progress")}
                 >
-                  กำลังดำเนินการ
+                  In Progress
                 </button>
                 <button
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -359,7 +359,7 @@ const Home = () => {
                   }`}
                   onClick={() => setFilter("completed")}
                 >
-                  เสร็จสมบูรณ์
+                  Completed
                 </button>
               </div>
             </div>
@@ -373,7 +373,7 @@ const Home = () => {
                 backgroundColor: "white",
               }}
             >
-              {/* วันที่สีแดงใน captureArea */}
+              {/* Red date in captureArea */}
               <div className="mb-6 mt-6">
                 <h2 className="text-3xl font-bold text-red-600 text-center">
                   {formattedDate}

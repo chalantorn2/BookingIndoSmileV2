@@ -37,8 +37,8 @@ const ViewInvoicesModal = ({
 
   const displayInvoices = showSearchResults ? filteredInvoices : recentInvoices;
   const displayTitle = showSearchResults
-    ? `ผลการค้นหา (${filteredInvoices.length} รายการ)`
-    : "Invoice ล่าสุด (3 รายการ)";
+    ? `Search Results (${filteredInvoices.length} items)`
+    : "Recent Invoices (3 items)";
 
   if (!isViewModalOpen) return null;
 
@@ -53,7 +53,7 @@ const ViewInvoicesModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h5 className="text-lg font-bold">เลือก Invoice</h5>
+          <h5 className="text-lg font-bold">Select Invoice</h5>
           <button
             className="text-gray-500 hover:text-gray-700"
             onClick={() => setIsViewModalOpen(false)}
@@ -72,7 +72,7 @@ const ViewInvoicesModal = ({
             <input
               type="text"
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="ค้นหาตามชื่อหรือวันที่..."
+              placeholder="Search by name or date..."
               value={searchInvoiceQuery}
               onChange={(e) => setSearchInvoiceQuery(e.target.value)}
             />
@@ -82,7 +82,7 @@ const ViewInvoicesModal = ({
               onClick={() => setSearchInvoiceQuery("")}
               className="mt-2 text-xs text-blue-600 hover:text-blue-800"
             >
-              ล้างการค้นหา
+              Clear Search
             </button>
           )}
         </div>
@@ -96,8 +96,8 @@ const ViewInvoicesModal = ({
           {displayInvoices.length === 0 ? (
             <div className="text-center py-4 text-gray-500">
               {showSearchResults
-                ? "ไม่พบ Invoice ที่ตรงกับคำค้นหา"
-                : "ไม่พบข้อมูล Invoice"}
+                ? "No invoices match the search"
+                : "No invoice data found"}
             </div>
           ) : (
             <div className="space-y-2">
@@ -109,15 +109,15 @@ const ViewInvoicesModal = ({
                 >
                   <div>
                     <div className="font-medium">
-                      {invoice.invoice_name || "ไม่มีชื่อ"}
+                      {invoice.invoice_name || "No Name"}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {invoice.invoice_date || "ไม่มีวันที่"}
+                      {invoice.invoice_date || "No Date"}
                     </div>
                     <div className="text-xs text-gray-400 mt-1">
-                      ยอดรวม:{" "}
+                      Total:{" "}
                       {parseFloat(invoice.total_amount || 0).toLocaleString()}{" "}
-                      บาท
+                      Baht
                     </div>
                   </div>
 
@@ -132,13 +132,13 @@ const ViewInvoicesModal = ({
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {invoice.status ? "เรียบร้อย" : "ไม่เรียบร้อย"}
+                      {invoice.status ? "Complete" : "Incomplete"}
                     </span>
 
                     {/* แสดงจำนวนไฟล์แนบ */}
                     {invoice.attachments && invoice.attachments.length > 0 && (
                       <span className="text-xs text-blue-600">
-                        {invoice.attachments.length} ไฟล์
+                        {invoice.attachments.length} Files
                       </span>
                     )}
                   </div>
@@ -154,7 +154,7 @@ const ViewInvoicesModal = ({
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
             onClick={() => setIsViewModalOpen(false)}
           >
-            ปิด
+            Close
           </button>
         </div>
       </div>

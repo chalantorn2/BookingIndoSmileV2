@@ -155,7 +155,7 @@ const TourForm = ({
           onClick={() => onRemove(id)}
           className="bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded text-sm"
         >
-          ลบ
+          Remove
         </button>
       </div>
 
@@ -163,13 +163,13 @@ const TourForm = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ประเภท
+              Type
             </label>
             <AutocompleteInput
               options={tourTypes}
               value={formData.tour_type || ""}
               onChange={(value) => handleValueChange("tour_type", value)}
-              placeholder="เลือกหรือพิมพ์ประเภททัวร์"
+              placeholder="Select or type tour type"
               onAddNew={handleAddNewTourType}
               name={`${fieldNamePrefix}type`}
               id={`${fieldNamePrefix}type`}
@@ -177,13 +177,13 @@ const TourForm = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ส่งใคร
+              Send To
             </label>
             <AutocompleteInput
               options={tourRecipients}
               value={formData.send_to || ""}
               onChange={(value) => handleValueChange("send_to", value)}
-              placeholder="เลือกหรือพิมพ์ผู้รับ"
+              placeholder="Select or type recipient"
               onAddNew={handleAddNewRecipient}
               name={`${fieldNamePrefix}send_to`}
               id={`${fieldNamePrefix}send_to`}
@@ -192,30 +192,30 @@ const TourForm = ({
         </div>
 
         <TextAreaField
-          label="รายละเอียด"
+          label="Details"
           name={`${fieldNamePrefix}detail`}
           value={formData.tour_detail}
           onChange={(value) => handleValueChange("tour_detail", value)}
-          placeholder="รายละเอียดเพิ่มเติม"
+          placeholder="Additional details"
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <InputField
-            label="เวลารับ"
+            label="Pick up Time"
             name={`${fieldNamePrefix}pickup_time`}
             value={formData.tour_pickup_time}
             onChange={(value) => handleValueChange("tour_pickup_time", value)}
-            placeholder="เวลารับ"
+            placeholder="Pick up time"
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              โรงแรม
+              Hotel
             </label>
             <AutocompleteInput
               options={places} // ใช้ places ทั้งหมดไม่ต้องกรอง
               value={formData.tour_hotel || ""}
               onChange={(value) => handleValueChange("tour_hotel", value)}
-              placeholder="เลือกหรือพิมพ์ชื่อโรงแรม"
+              placeholder="Select or type hotel name"
               onAddNew={handleAddNewHotel}
               name={`${fieldNamePrefix}hotel`}
               id={`${fieldNamePrefix}hotel`}
@@ -225,21 +225,21 @@ const TourForm = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <InputField
-            label="หมายเลขห้อง"
+            label="Room Number"
             name={`${fieldNamePrefix}room_no`}
             value={formData.tour_room_no}
             onChange={(value) => handleValueChange("tour_room_no", value)}
-            placeholder="เลขห้อง"
+            placeholder="Room number"
           />
           <InputField
-            label="เบอร์ติดต่อ"
+            label="Contact Number"
             name={`${fieldNamePrefix}contact_no`}
             value={formData.tour_contact_no}
             onChange={(value) => handleValueChange("tour_contact_no", value)}
-            placeholder="เบอร์โทรศัพท์"
+            placeholder="Phone number"
           />
           <InputField
-            label="วันที่"
+            label="Date"
             name={`${fieldNamePrefix}date`}
             type="date"
             value={formData.tour_date}
@@ -248,9 +248,9 @@ const TourForm = ({
           />
         </div>
         <InputField
-          label="หมายเหตุ"
+          label="Note"
           name={`${fieldNamePrefix}note`}
-          placeholder="หมายเหตุเพิ่มเติม"
+          placeholder="Additional note"
           value={formData.note || ""}
           onChange={(newValue) => handleValueChange("note", newValue)}
         />
