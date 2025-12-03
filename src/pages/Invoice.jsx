@@ -31,8 +31,25 @@ import {
   Plus,
   CheckCircle,
   Search,
+  GripVertical,
 } from "lucide-react";
 import { useAlertDialogContext } from "../contexts/AlertDialogContext";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const formatNumberWithCommas = (num) => {
   if (num === null || num === undefined) return "0";
@@ -540,6 +557,58 @@ const Invoice = () => {
     ];
 
     setEditablePaymentIds(newEditablePaymentIds);
+  };
+
+  // ฟังก์ชันสำหรับจัดเรียงตามวันที่
+  const handleSortPaymentsByDate = () => {
+    const sortedIds = [...editablePaymentIds].sort((idA, idB) => {
+      const paymentA = allPaymentsData.find((p) => p.id === idA);
+      const paymentB = allPaymentsData.find((p) => p.id === idB);
+
+      if (!paymentA || !paymentB) return 0;
+
+      // หา start date และ end date ของแต่ละ payment
+      const getDates = (payment) => {
+        let startDate = null;
+        let endDate = null;
+
+        if (payment.bookings && payment.bookings.length > 0) {
+          payment.bookings.forEach((booking) => {
+            const dateStr =
+              booking.date || booking.tour_date || booking.transfer_date;
+            if (dateStr) {
+              const currentDate = new Date(dateStr);
+              if (!startDate || currentDate < startDate)
+                startDate = currentDate;
+              if (!endDate || currentDate > endDate) endDate = currentDate;
+            }
+          });
+        }
+
+        return { startDate, endDate };
+      };
+
+      const datesA = getDates(paymentA);
+      const datesB = getDates(paymentB);
+
+      // เปรียบเทียบ start date ก่อน
+      if (datesA.startDate && datesB.startDate) {
+        const startDiff =
+          datesA.startDate.getTime() - datesB.startDate.getTime();
+        if (startDiff !== 0) return startDiff;
+
+        // ถ้า start date เท่ากัน เปรียบเทียบ end date
+        if (datesA.endDate && datesB.endDate) {
+          return datesA.endDate.getTime() - datesB.endDate.getTime();
+        }
+      }
+
+      // ถ้าไม่มีวันที่หรือเท่ากันหมด ให้อยู่ตำแหน่งเดิม
+      return 0;
+    });
+
+    setEditablePaymentIds(sortedIds);
+    showSuccess("Payments sorted by date successfully");
   };
 
   // ฟังก์ชันสำหรับเพิ่ม Payment เข้าไปใน Invoice
@@ -1389,8 +1458,118 @@ const Invoice = () => {
     );
   };
 
+  // Sortable Payment Item Component
+  const SortablePaymentItem = ({ paymentId, index, payment }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: paymentId });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    // คำนวณวันที่เริ่มต้นและสิ้นสุด
+    let startDate = null;
+    let endDate = null;
+
+    if (payment.bookings && payment.bookings.length > 0) {
+      payment.bookings.forEach((booking) => {
+        const dateStr =
+          booking.date || booking.tour_date || booking.transfer_date;
+        if (dateStr) {
+          const currentDate = new Date(dateStr);
+          if (!startDate || currentDate < startDate) startDate = currentDate;
+          if (!endDate || currentDate > endDate) endDate = currentDate;
+        }
+      });
+    }
+
+    // สร้างข้อความแสดงวันที่
+    let dateRangeText = "";
+    if (startDate && endDate) {
+      const formatDateDisplay = (date) => format(date, "dd/MM/yyyy");
+
+      if (startDate.getTime() === endDate.getTime()) {
+        dateRangeText = `${formatDateDisplay(startDate)}`;
+      } else {
+        dateRangeText = `${formatDateDisplay(startDate)} - ${formatDateDisplay(
+          endDate
+        )}`;
+      }
+    }
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="border rounded p-3 flex justify-between items-center bg-white hover:bg-gray-50"
+      >
+        <div className="flex items-center flex-1">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing mr-3 text-gray-400 hover:text-gray-600"
+          >
+            <GripVertical size={20} />
+          </div>
+          <div>
+            <div className="font-medium">
+              {payment.first_name} {payment.last_name}
+            </div>
+            <div className="text-sm text-gray-500">
+              {payment.agent_name || "No Agent"}
+            </div>
+            {dateRangeText && (
+              <div className="text-xs text-blue-600 mt-1">{dateRangeText}</div>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="text-red-600 hover:text-red-800"
+          onClick={(e) => {
+            e.preventDefault();
+            handleRemovePaymentFromInvoice(paymentId);
+          }}
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    );
+  };
+
   // Edit Invoice Modal
   const EditInvoiceModal = () => {
+    const scrollContainerRef = useRef(null);
+
+    const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      })
+    );
+
+    const handleDragEnd = (event) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id) {
+        const oldIndex = editablePaymentIds.indexOf(active.id);
+        const newIndex = editablePaymentIds.indexOf(over.id);
+
+        setEditablePaymentIds(
+          arrayMove(editablePaymentIds, oldIndex, newIndex)
+        );
+      }
+    };
+
     if (!isEditModalOpen) return null;
 
     return (
@@ -1409,117 +1588,60 @@ const Invoice = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* ส่วนซ้าย - Payment ที่เลือกแล้ว */}
             <div className="border rounded-lg p-4">
-              <h6 className="font-semibold mb-3 border-b pb-2">
-                Selected Payments
-              </h6>
+              <div className="flex items-center justify-between mb-3 border-b pb-2">
+                <h6 className="font-semibold">Selected Payments</h6>
+                {editablePaymentIds.length > 0 && (
+                  <button
+                    type="button"
+                    className="text-xs px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSortPaymentsByDate();
+                    }}
+                    title="Sort by date (Start date → End date)"
+                  >
+                    Auto Sort by Date
+                  </button>
+                )}
+              </div>
 
-              <div className="max-h-[50vh] overflow-y-auto">
+              <div
+                ref={scrollContainerRef}
+                className="max-h-[50vh] overflow-y-auto"
+              >
                 {editablePaymentIds.length === 0 ? (
                   <div className="text-center py-4 text-gray-500">
                     No payments selected
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {editablePaymentIds.map((paymentId, index) => {
-                      const payment = allPaymentsData.find(
-                        (p) => p.id === paymentId
-                      );
-                      if (!payment) return null;
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={editablePaymentIds}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2">
+                        {editablePaymentIds.map((paymentId, index) => {
+                          const payment = allPaymentsData.find(
+                            (p) => p.id === paymentId
+                          );
+                          if (!payment) return null;
 
-                      // คำนวณวันที่เริ่มต้นและสิ้นสุด
-                      let startDate = null;
-                      let endDate = null;
-
-                      if (payment.bookings && payment.bookings.length > 0) {
-                        payment.bookings.forEach((booking) => {
-                          const dateStr =
-                            booking.date ||
-                            booking.tour_date ||
-                            booking.transfer_date;
-                          if (dateStr) {
-                            const currentDate = new Date(dateStr);
-                            if (!startDate || currentDate < startDate)
-                              startDate = currentDate;
-                            if (!endDate || currentDate > endDate)
-                              endDate = currentDate;
-                          }
-                        });
-                      }
-
-                      // สร้างข้อความแสดงวันที่
-                      let dateRangeText = "";
-                      if (startDate && endDate) {
-                        const formatDateDisplay = (date) =>
-                          format(date, "dd/MM/yyyy");
-
-                        if (startDate.getTime() === endDate.getTime()) {
-                          dateRangeText = `${formatDateDisplay(startDate)}`;
-                        } else {
-                          dateRangeText = `${formatDateDisplay(
-                            startDate
-                          )} - ${formatDateDisplay(endDate)}`;
-                        }
-                      }
-
-                      return (
-                        <div
-                          key={paymentId}
-                          className="border rounded p-3 flex justify-between items-center"
-                        >
-                          <div>
-                            <div className="font-medium">
-                              {payment.first_name} {payment.last_name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {payment.agent_name || "No Agent"}
-                            </div>
-                            {dateRangeText && (
-                              <div className="text-xs text-blue-600 mt-1">
-                                {dateRangeText}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <button
-                              className="text-blue-600 hover:text-blue-800"
-                              onClick={() => handleMovePayment(index, "up")}
-                              disabled={index === 0}
-                            >
-                              <ArrowUp
-                                size={16}
-                                className={index === 0 ? "opacity-30" : ""}
-                              />
-                            </button>
-
-                            <button
-                              className="text-blue-600 hover:text-blue-800"
-                              onClick={() => handleMovePayment(index, "down")}
-                              disabled={index === editablePaymentIds.length - 1}
-                            >
-                              <ArrowDown
-                                size={16}
-                                className={
-                                  index === editablePaymentIds.length - 1
-                                    ? "opacity-30"
-                                    : ""
-                                }
-                              />
-                            </button>
-
-                            <button
-                              className="text-red-600 hover:text-red-800"
-                              onClick={() =>
-                                handleRemovePaymentFromInvoice(paymentId)
-                              }
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          return (
+                            <SortablePaymentItem
+                              key={paymentId}
+                              paymentId={paymentId}
+                              index={index}
+                              payment={payment}
+                            />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </div>
             </div>
@@ -1596,10 +1718,12 @@ const Invoice = () => {
                           </div>
 
                           <button
+                            type="button"
                             className="text-green-600 hover:text-green-800"
-                            onClick={() =>
-                              handleAddPaymentToInvoice(payment.id)
-                            }
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleAddPaymentToInvoice(payment.id);
+                            }}
                           >
                             <Plus size={16} />
                           </button>
@@ -1614,8 +1738,12 @@ const Invoice = () => {
 
           <div className="flex justify-between mt-6">
             <button
+              type="button"
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center"
-              onClick={handleDeleteInvoice}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteInvoice();
+              }}
             >
               <Trash2 size={16} className="mr-2" />
               Delete This Invoice
@@ -1623,15 +1751,23 @@ const Invoice = () => {
 
             <div className="flex space-x-2">
               <button
+                type="button"
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                onClick={() => setIsEditModalOpen(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsEditModalOpen(false);
+                }}
               >
                 Cancel
               </button>
 
               <button
+                type="button"
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"
-                onClick={handleSaveEditedInvoice}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSaveEditedInvoice();
+                }}
               >
                 <Save size={16} className="mr-2" />
                 Save Changes
@@ -1678,7 +1814,8 @@ const Invoice = () => {
         <div className="print:hidden text-center mb-4 space-x-2">
           {isViewingExistingInvoice && (
             <div className="text-center mb-4 bg-blue-100 text-blue-700 p-2 rounded">
-              Currently viewing Invoice <b>{currentInvoice?.invoice_name || invoiceId}</b>
+              Currently viewing Invoice{" "}
+              <b>{currentInvoice?.invoice_name || invoiceId}</b>
             </div>
           )}
 
