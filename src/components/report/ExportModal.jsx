@@ -255,9 +255,8 @@ const ExportModal = ({
     };
   };
 
-  // Handle selection - แก้ไขให้ชัดเจนขึ้น
+  // Handle selection
   const handleTourSelect = (id, checked) => {
-    console.log("Tour select:", id, checked); // Debug log
     setSelectedTourIds((prev) => {
       const newSelected = new Set(prev);
       if (checked) {
@@ -265,13 +264,11 @@ const ExportModal = ({
       } else {
         newSelected.delete(id);
       }
-      console.log("New tour selected:", Array.from(newSelected)); // Debug log
       return newSelected;
     });
   };
 
   const handleTransferSelect = (id, checked) => {
-    console.log("Transfer select:", id, checked); // Debug log
     setSelectedTransferIds((prev) => {
       const newSelected = new Set(prev);
       if (checked) {
@@ -279,7 +276,6 @@ const ExportModal = ({
       } else {
         newSelected.delete(id);
       }
-      console.log("New transfer selected:", Array.from(newSelected)); // Debug log
       return newSelected;
     });
   };
@@ -433,10 +429,6 @@ const ExportModal = ({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log(
-                                  `Clicking ${booking.type} ${booking.id}, current state:`,
-                                  isSelected
-                                );
                                 if (booking.type === "tour") {
                                   handleTourSelect(booking.id, !isSelected);
                                 } else {

@@ -1,5 +1,5 @@
 // src/components/invoice/PaymentSelectionModal.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 const PaymentSelectionModal = ({
@@ -10,6 +10,32 @@ const PaymentSelectionModal = ({
   setSelectedPaymentIds,
   handleConfirmSelection,
 }) => {
+  // Get current month in format "YYYY-MM" or match the format used in paymentsByMonth
+  const getCurrentMonthKey = () => {
+    const months = Object.keys(paymentsByMonth).sort();
+    if (months.length === 0) return "";
+
+    // Find current month in the available months
+    const now = new Date();
+    const currentMonthStr = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+    // If current month exists in data, return it
+    const currentMonth = months.find(m => m === currentMonthStr);
+    if (currentMonth) return currentMonth;
+
+    // Otherwise return the latest month
+    return months[months.length - 1];
+  };
+
+  const [selectedMonth, setSelectedMonth] = useState("");
+
+  // Initialize selected month when modal opens or paymentsByMonth changes
+  useEffect(() => {
+    if (isSelectModalOpen && paymentsByMonth) {
+      setSelectedMonth(getCurrentMonthKey());
+    }
+  }, [isSelectModalOpen, paymentsByMonth]);
+
   const renderPaymentsByMonth = () => {
     const months = Object.keys(paymentsByMonth).sort();
     if (months.length === 0) {
@@ -20,12 +46,25 @@ const PaymentSelectionModal = ({
       );
     }
 
+    // Filter payments by selected month
+    const paymentsToShow = selectedMonth && paymentsByMonth[selectedMonth]
+      ? { [selectedMonth]: paymentsByMonth[selectedMonth] }
+      : {};
+
+    if (Object.keys(paymentsToShow).length === 0) {
+      return (
+        <div className="text-gray-600 bg-gray-100 p-3 rounded">
+          No payments available for selected month
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3">
-        {months.map((month) => (
+        {Object.keys(paymentsToShow).map((month) => (
           <div key={month}>
             <h5 className="pb-2 border-b text-blue-600 font-medium">{month}</h5>
-            {paymentsByMonth[month].map((payment) => (
+            {paymentsToShow[month].map((payment) => (
               <label
                 key={payment.id}
                 className="flex items-center mb-2 pl-2 cursor-pointer"
@@ -89,6 +128,27 @@ const PaymentSelectionModal = ({
             <X size={20} />
           </button>
         </div>
+
+        {/* Month Selection Dropdown */}
+        {Object.keys(paymentsByMonth).length > 0 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Month:
+            </label>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {Object.keys(paymentsByMonth).sort().map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="max-h-[70vh] overflow-y-auto">
           {renderPaymentsByMonth()}
         </div>

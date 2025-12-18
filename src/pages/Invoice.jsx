@@ -1188,7 +1188,7 @@ const Invoice = () => {
     printWindow.document.write(`
     <div class="invoice-footer">
       <div>
-        <p style="font-weight: bold; margin-bottom: 5px;">Transfer to SEVENSMILE</p>
+        <p style="font-weight: bold; margin-bottom: 5px;">Transfer to INDO Smile</p>
         <p>Kasikorn Bank 255-2431-068</p>
         <p>Account Name: Chantawarat Loosatidkun</p>
       </div>
@@ -1222,7 +1222,42 @@ const Invoice = () => {
 
   // แสดง Payment Select Modal
   const PaymentSelectModal = () => {
+    // Get current month in format matching paymentsByMonth keys
+    const getCurrentMonthKey = () => {
+      const months = Object.keys(paymentsByMonth).sort();
+      if (months.length === 0) return "";
+
+      // Find current month in the available months
+      const now = new Date();
+      const currentMonthStr = now.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+
+      // If current month exists in data, return it
+      const currentMonth = months.find((m) => m === currentMonthStr);
+      if (currentMonth) return currentMonth;
+
+      // Otherwise return the latest month
+      return months[months.length - 1];
+    };
+
+    const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
+
+    // Update selected month when modal opens or data changes
+    useEffect(() => {
+      if (isSelectModalOpen && paymentsByMonth) {
+        setSelectedMonth(getCurrentMonthKey());
+      }
+    }, [isSelectModalOpen, paymentsByMonth]);
+
     if (!isSelectModalOpen) return null;
+
+    // Filter payments by selected month
+    const filteredPaymentsByMonth =
+      selectedMonth && paymentsByMonth[selectedMonth]
+        ? { [selectedMonth]: paymentsByMonth[selectedMonth] }
+        : {};
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
@@ -1238,21 +1273,48 @@ const Invoice = () => {
               <X size={20} />
             </button>
           </div>
+
+          {/* Month Selection Dropdown */}
+          {Object.keys(paymentsByMonth).length > 0 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Month:
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                {Object.keys(paymentsByMonth)
+                  .sort()
+                  .map((month) => (
+                    <option key={month} value={month}>
+                      {month}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
           <div className="max-h-[70vh] overflow-y-auto">
             {Object.keys(paymentsByMonth).length === 0 ? (
               <div className="text-yellow-600 bg-yellow-100 p-3 rounded">
                 No payments without invoices
               </div>
+            ) : Object.keys(filteredPaymentsByMonth).length === 0 ? (
+              <div className="text-gray-600 bg-gray-100 p-3 rounded">
+                No payments available for selected month
+              </div>
             ) : (
               <div className="space-y-3">
-                {Object.keys(paymentsByMonth)
+                {Object.keys(filteredPaymentsByMonth)
                   .sort()
                   .map((month) => (
                     <div key={month}>
                       <h5 className="pb-2 border-b text-blue-600 font-medium">
                         {month}
                       </h5>
-                      {paymentsByMonth[month].map((payment) => (
+                      {filteredPaymentsByMonth[month].map((payment) => (
                         <label
                           key={payment.id}
                           className="flex items-center mb-2 pl-2 cursor-pointer"

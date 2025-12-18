@@ -379,7 +379,8 @@ const Report = () => {
   const calculateProfit = (booking) => {
     const cost = parseFloat(booking.cost_price) || 0;
     const sell = parseFloat(booking.selling_price) || 0;
-    return sell - cost;
+    const profit = sell - cost;
+    return profit;
   };
 
   // เพิ่ม state สำหรับคอลัมน์ที่แสดง
@@ -667,10 +668,14 @@ const Report = () => {
                       ? formatPax(booking)
                       : col.key === "PickupTime"
                       ? booking.tour_pickup_time || "-"
-                      : col.key === "Hotel"
-                      ? booking.tour_hotel || "-" // ใหม่
-                      : col.key === "Details"
-                      ? booking.tour_detail || "-" // ใหม่
+                      : col.key === "PickupFrom"
+                      ? booking.tour_hotel || "-"
+                      : col.key === "DropTo"
+                      ? booking.tour_detail || "-"
+                      : col.key === "Flight"
+                      ? booking.tour_flight || "-"
+                      : col.key === "FlightTime"
+                      ? booking.tour_ftime || "-"
                       : col.key === "SendTo"
                       ? booking.send_to || "-"
                       : col.key === "Note"
@@ -708,8 +713,8 @@ const Report = () => {
       { key: "CustomerName", label: "Customer Name" },
       { key: "Pax", label: "Pax" },
       { key: "PickupTime", label: "Pickup Time" },
-      { key: "HotelOrPickup", label: "Pickup From" },
-      { key: "DetailsOrDropoff", label: "Drop To" },
+      { key: "PickupFrom", label: "Pickup From" },
+      { key: "DropTo", label: "Drop To" },
       { key: "Flight", label: "Flight" },
       { key: "FlightTime", label: "Flight Time" },
       { key: "SendTo", label: "Send To" },
