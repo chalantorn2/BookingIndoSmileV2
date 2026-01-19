@@ -63,7 +63,7 @@ const Invoice = () => {
   const [allPaymentsData, setAllPaymentsData] = useState([]);
   const [selectedPaymentIds, setSelectedPaymentIds] = useState([]);
   const [invoiceDate, setInvoiceDate] = useState(
-    format(new Date(), "dd/MM/yyyy")
+    format(new Date(), "dd/MM/yyyy"),
   );
   const [invoiceId, setInvoiceId] = useState("");
   const [showCostProfit, setShowCostProfit] = useState(false);
@@ -149,7 +149,7 @@ const Invoice = () => {
         } else {
           // ถ้าเป็นคนละวัน
           dateRangeStr = ` |  ${formatDateShort(startDate)} - ${formatDateShort(
-            endDate
+            endDate,
           )}`;
         }
       }
@@ -199,7 +199,7 @@ const Invoice = () => {
 
     const promptedInvoiceName = prompt(
       "Please enter Invoice name:",
-      invoiceName
+      invoiceName,
     );
     if (!promptedInvoiceName) {
       setError("Invoice name not specified");
@@ -214,7 +214,7 @@ const Invoice = () => {
       const safeGrandTotal = Number(Number(grandTotal).toFixed(2));
       const safeTotalCost = Number(Number(totalCost).toFixed(2));
       const safeTotalSellingPrice = Number(
-        Number(totalSellingPrice).toFixed(2)
+        Number(totalSellingPrice).toFixed(2),
       );
       const safeTotalProfit = Number(Number(totalProfit).toFixed(2));
 
@@ -261,7 +261,7 @@ const Invoice = () => {
       }
 
       showSuccess(
-        `Invoice saved successfully! Invoice: ${promptedInvoiceName}`
+        `Invoice saved successfully! Invoice: ${promptedInvoiceName}`,
       );
       setSelectedPaymentIds([]);
       setGrandTotal(0);
@@ -364,7 +364,7 @@ const Invoice = () => {
 
       if (data.payment_ids && data.payment_ids.length > 0) {
         const relatedPayments = allPaymentsData.filter((p) =>
-          data.payment_ids.includes(p.id)
+          data.payment_ids.includes(p.id),
         );
 
         relatedPayments.forEach((payment) => {
@@ -459,7 +459,7 @@ const Invoice = () => {
 
       // ดึงข้อมูล Payment ที่เลือกทั้งหมด
       const selectedPayments = allPaymentsData.filter((p) =>
-        editablePaymentIds.includes(p.id)
+        editablePaymentIds.includes(p.id),
       );
 
       selectedPayments.forEach((payment) => {
@@ -494,7 +494,7 @@ const Invoice = () => {
       // อัพเดท Invoice
       const { error: updateError } = await updateInvoice(
         editingInvoiceId,
-        updatedInvoiceData
+        updatedInvoiceData,
       );
 
       if (updateError) throw updateError;
@@ -504,7 +504,7 @@ const Invoice = () => {
 
       // Payment ที่ถูกนำออกจาก Invoice
       const removedPaymentIds = currentPaymentIds.filter(
-        (id) => !editablePaymentIds.includes(id)
+        (id) => !editablePaymentIds.includes(id),
       );
       if (removedPaymentIds.length > 0) {
         await updatePaymentsInvoiceStatus(removedPaymentIds, false);
@@ -512,7 +512,7 @@ const Invoice = () => {
 
       // Payment ที่ถูกเพิ่มเข้ามาใน Invoice
       const addedPaymentIds = editablePaymentIds.filter(
-        (id) => !currentPaymentIds.includes(id)
+        (id) => !currentPaymentIds.includes(id),
       );
       if (addedPaymentIds.length > 0) {
         await updatePaymentsInvoiceStatus(addedPaymentIds, true);
@@ -692,7 +692,7 @@ const Invoice = () => {
         for (let j = 0; j < table.rows[i].cells.length; j++) {
           let text = table.rows[i].cells[j].innerText.replace(
             /(\r\n|\n|\r)/gm,
-            " "
+            " ",
           );
           text = text.replace(/"/g, '""');
           row.push(`"${text}"`);
@@ -726,7 +726,7 @@ const Invoice = () => {
   const handleEditRef = async (paymentId, currentRef) => {
     const newRefValue = prompt(
       "Please enter new REF number:",
-      currentRef || ""
+      currentRef || "",
     );
     if (newRefValue === null) return;
     try {
@@ -783,7 +783,7 @@ const Invoice = () => {
     if (type === "description") {
       const newDescription = prompt(
         "Please enter deduction description:",
-        deductionDescription
+        deductionDescription,
       );
       if (newDescription !== null) {
         setDeductionDescription(newDescription);
@@ -800,7 +800,7 @@ const Invoice = () => {
     } else if (type === "amount") {
       const newAmount = prompt(
         "Please enter deduction amount:",
-        deductionAmount.toString()
+        deductionAmount.toString(),
       );
       if (newAmount !== null) {
         const numAmount = parseFloat(newAmount) || 0;
@@ -1084,30 +1084,30 @@ const Invoice = () => {
           if (showCostProfit) {
             printWindow.document.write(`
              <td style="text-align: right;">${formatNumberWithCommas(
-               costVal
+               costVal,
              )}</td>
              <td style="text-align: right;">${formatNumberWithCommas(
-               priceVal
+               priceVal,
              )}</td>
              <td style="text-align: right;">${formatNumberWithCommas(
-               profitVal
+               profitVal,
              )}</td>
            `);
           } else {
             printWindow.document.write(`
              <td style="text-align: right;">${formatNumberWithCommas(
-               priceVal
+               priceVal,
              )}</td>
            `);
           }
 
           printWindow.document.write(`
            <td style="text-align: center;">${formatNumberWithCommas(
-             feeVal
+             feeVal,
            )}</td>
            <td style="text-align: center;">${unitVal}</td>
            <td style="text-align: right;">${formatNumberWithCommas(
-             rowTotal
+             rowTotal,
            )}</td>
          `);
 
@@ -1120,13 +1120,13 @@ const Invoice = () => {
            <tr class="total-row">
              <td colspan="6" style="text-align: right; font-weight: bold;">Subtotal (Cost/Price/Profit)</td>
              <td style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
-               paymentCostTotal
+               paymentCostTotal,
              )}</td>
              <td style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
-               paymentRowTotal
+               paymentRowTotal,
              )}</td>
              <td style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
-               paymentProfitTotal
+               paymentProfitTotal,
              )}</td>
              <td colspan="3"></td>
            </tr>
@@ -1140,7 +1140,7 @@ const Invoice = () => {
              showCostProfit ? 10 : 8
            }" style="text-align: right; font-weight: bold;">Total</td>
            <td colspan="2" style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
-             paymentRowTotal
+             paymentRowTotal,
            )}</td>
          </tr>
        `);
@@ -1155,7 +1155,7 @@ const Invoice = () => {
      showCostProfit ? 10 : 8
    }" style="text-align: right; font-weight: bold;">Grand Total</td>
    <td colspan="2" style="text-align: right; font-weight: bold;">${formatNumberWithCommas(
-     grandTotal
+     grandTotal,
    )}</td>
  </tr>
 `);
@@ -1170,10 +1170,10 @@ const Invoice = () => {
      <td colspan="${
        showCostProfit ? 10 : 8
      }" style="text-align: right; font-weight: bold;">${
-            deductionDescription || "Service Fee"
-          }</td>
+       deductionDescription || "Service Fee"
+     }</td>
      <td colspan="2" style="text-align: right; font-weight: bold;">-${formatNumberWithCommas(
-       deductionAmount || 0
+       deductionAmount || 0,
      )}</td>
    </tr>
   `);
@@ -1189,12 +1189,12 @@ const Invoice = () => {
     <div class="invoice-footer">
       <div>
         <p style="font-weight: bold; margin-bottom: 5px;">Transfer to INDO Smile</p>
-        <p>Kasikorn Bank 255-2431-068</p>
-        <p>Account Name: Chantawarat Loosatidkun</p>
+        <p>Krungthai 017-0-67435-5</p>
+        <p>Account Name: INDO SMILE SOUTH SERVICES CO.,LTD.</p>
       </div>
      <div style="text-align: right;">
           <p style="font-weight: bold; font-size: 14px;">Net Total: ${formatNumberWithCommas(
-            (grandTotal || 0) - (deductionAmount || 0)
+            (grandTotal || 0) - (deductionAmount || 0),
           )} Baht</p>
         </div>
     </div>
@@ -1333,8 +1333,8 @@ const Invoice = () => {
                               } else {
                                 setSelectedPaymentIds(
                                   selectedPaymentIds.filter(
-                                    (id) => id !== payment.id
-                                  )
+                                    (id) => id !== payment.id,
+                                  ),
                                 );
                               }
                             }}
@@ -1387,7 +1387,7 @@ const Invoice = () => {
             (invoice.invoice_name || "")
               .toLowerCase()
               .includes(searchInvoiceQuery.toLowerCase()) ||
-            (invoice.invoice_date || "").includes(searchInvoiceQuery)
+            (invoice.invoice_date || "").includes(searchInvoiceQuery),
         );
         setFilteredInvoices(filtered);
         setShowSearchResults(true);
@@ -1562,7 +1562,7 @@ const Invoice = () => {
         dateRangeText = `${formatDateDisplay(startDate)}`;
       } else {
         dateRangeText = `${formatDateDisplay(startDate)} - ${formatDateDisplay(
-          endDate
+          endDate,
         )}`;
       }
     }
@@ -1616,7 +1616,7 @@ const Invoice = () => {
       useSensor(PointerSensor),
       useSensor(KeyboardSensor, {
         coordinateGetter: sortableKeyboardCoordinates,
-      })
+      }),
     );
 
     const handleDragEnd = (event) => {
@@ -1627,7 +1627,7 @@ const Invoice = () => {
         const newIndex = editablePaymentIds.indexOf(over.id);
 
         setEditablePaymentIds(
-          arrayMove(editablePaymentIds, oldIndex, newIndex)
+          arrayMove(editablePaymentIds, oldIndex, newIndex),
         );
       }
     };
@@ -1688,7 +1688,7 @@ const Invoice = () => {
                       <div className="space-y-2">
                         {editablePaymentIds.map((paymentId, index) => {
                           const payment = allPaymentsData.find(
-                            (p) => p.id === paymentId
+                            (p) => p.id === paymentId,
                           );
                           if (!payment) return null;
 
@@ -1755,7 +1755,7 @@ const Invoice = () => {
                           dateRangeText = `${formatDateDisplay(startDate)}`;
                         } else {
                           dateRangeText = `${formatDateDisplay(
-                            startDate
+                            startDate,
                           )} - ${formatDateDisplay(endDate)}`;
                         }
                       }

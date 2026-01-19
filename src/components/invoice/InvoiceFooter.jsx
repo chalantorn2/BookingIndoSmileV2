@@ -10,8 +10,8 @@ const InvoiceFooter = ({
     <div className="invoice-footer mt-8 flex flex-wrap justify-between border-t border-gray-300 pt-4 print:mt-4">
       <div className="w-full md:w-1/2 text-left">
         <p className="mb-1 font-bold">PAYMENT TO INDO Smile</p>
-        <p className="mb-1">KRUNGSRI 6641121789</p>
-        <p className="mb-1">ACCT : TAWEE WONGPIENKIT</p>
+        <p className="mb-1">Krungthai 017-0-67435-5</p>
+        <p className="mb-1">ACCT : INDO SMILE SOUTH SERVICES CO.,LTD.</p>
       </div>
       <div className="w-full md:w-1/2 text-right">
         <div className="text-xl font-bold text-gray-800" id="grandTotalDisplay">
