@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import supabase from "../config/supabaseClient";
 import { useNotification } from "../hooks/useNotification";
@@ -74,6 +74,7 @@ const Invoice = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [invoicesList, setInvoicesList] = useState([]);
   const [paymentsByMonth, setPaymentsByMonth] = useState({});
+  const [selectModalMonth, setSelectModalMonth] = useState("");
   const [grandTotal, setGrandTotal] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [totalSellingPrice, setTotalSellingPrice] = useState(0);
@@ -1220,43 +1221,44 @@ const Invoice = () => {
     }
   };
 
+  // Get current month in format matching paymentsByMonth keys
+  const getCurrentMonthKey = useCallback(() => {
+    const months = Object.keys(paymentsByMonth).sort();
+    if (months.length === 0) return "";
+
+    // Find current month in the available months
+    const now = new Date();
+    const currentMonthStr = now.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    // If current month exists in data, return it
+    const currentMonth = months.find((m) => m === currentMonthStr);
+    if (currentMonth) return currentMonth;
+
+    // Otherwise return the latest month
+    return months[months.length - 1];
+  }, [paymentsByMonth]);
+
+  // Initialize selectModalMonth when modal opens
+  useEffect(() => {
+    if (isSelectModalOpen && !selectModalMonth) {
+      setSelectModalMonth(getCurrentMonthKey());
+    } else if (!isSelectModalOpen && selectModalMonth) {
+      // Reset when modal closes
+      setSelectModalMonth("");
+    }
+  }, [isSelectModalOpen, getCurrentMonthKey, selectModalMonth]);
+
   // แสดง Payment Select Modal
   const PaymentSelectModal = () => {
-    // Get current month in format matching paymentsByMonth keys
-    const getCurrentMonthKey = () => {
-      const months = Object.keys(paymentsByMonth).sort();
-      if (months.length === 0) return "";
-
-      // Find current month in the available months
-      const now = new Date();
-      const currentMonthStr = now.toLocaleString("en-US", {
-        month: "long",
-        year: "numeric",
-      });
-
-      // If current month exists in data, return it
-      const currentMonth = months.find((m) => m === currentMonthStr);
-      if (currentMonth) return currentMonth;
-
-      // Otherwise return the latest month
-      return months[months.length - 1];
-    };
-
-    const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
-
-    // Update selected month when modal opens or data changes
-    useEffect(() => {
-      if (isSelectModalOpen && paymentsByMonth) {
-        setSelectedMonth(getCurrentMonthKey());
-      }
-    }, [isSelectModalOpen, paymentsByMonth]);
-
     if (!isSelectModalOpen) return null;
 
     // Filter payments by selected month
     const filteredPaymentsByMonth =
-      selectedMonth && paymentsByMonth[selectedMonth]
-        ? { [selectedMonth]: paymentsByMonth[selectedMonth] }
+      selectModalMonth && paymentsByMonth[selectModalMonth]
+        ? { [selectModalMonth]: paymentsByMonth[selectModalMonth] }
         : {};
 
     return (
@@ -1282,8 +1284,8 @@ const Invoice = () => {
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                value={selectModalMonth}
+                onChange={(e) => setSelectModalMonth(e.target.value)}
               >
                 {Object.keys(paymentsByMonth)
                   .sort()
