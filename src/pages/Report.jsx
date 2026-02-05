@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 import {
   Download,
   RefreshCcw,
@@ -22,10 +22,9 @@ const Report = () => {
   const { agents, tourRecipients, transferRecipients, addInformation } =
     useInformation();
 
-  // Filter states - เปลี่ยนเป็น arrays
-  const [selectedMonth, setSelectedMonth] = useState(
-    format(new Date(), "yyyy-MM")
-  );
+  // Filter states - Date Range
+  const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   // Multiple filter selections
   const [selectedAgents, setSelectedAgents] = useState([]);
@@ -40,7 +39,6 @@ const Report = () => {
   const [currentTransferValue, setCurrentTransferValue] = useState("");
 
   // Export states
-  const [exportRange, setExportRange] = useState("full_month");
   const [exportFormat, setExportFormat] = useState("combined");
   const [isExporting, setIsExporting] = useState(false);
 
@@ -73,7 +71,8 @@ const Report = () => {
       setSelectedTransferIds(new Set());
     }
   }, [
-    selectedMonth,
+    startDate,
+    endDate,
     selectedAgents,
     selectedTourRecipients,
     selectedTransferRecipients,
@@ -99,11 +98,6 @@ const Report = () => {
     setError(null);
 
     try {
-      const startDate = format(
-        startOfMonth(new Date(selectedMonth)),
-        "yyyy-MM-dd"
-      );
-      const endDate = format(endOfMonth(new Date(selectedMonth)), "yyyy-MM-dd");
 
       let allTourBookings = [];
       let allTransferBookings = [];
@@ -297,7 +291,8 @@ const Report = () => {
   };
 
   const handleReset = () => {
-    setSelectedMonth(format(new Date(), "yyyy-MM"));
+    setStartDate(format(new Date(), "yyyy-MM-dd"));
+    setEndDate(format(new Date(), "yyyy-MM-dd"));
     setSelectedAgents([]);
     setSelectedTourRecipients([]);
     setSelectedTransferRecipients([]);
@@ -306,7 +301,6 @@ const Report = () => {
     setCurrentTransferValue("");
     setSelectedTourIds(new Set());
     setSelectedTransferIds(new Set());
-    setExportRange("full_month");
     setExportFormat("combined");
   };
 
@@ -452,8 +446,8 @@ const Report = () => {
       const result = await exportReportToExcel(
         finalTourBookings,
         finalTransferBookings,
-        selectedMonth,
-        exportRange,
+        startDate,
+        endDate,
         exportFormat,
         selectedFilters
       );
@@ -471,18 +465,12 @@ const Report = () => {
     }
   };
 
-  // แก้ไขฟังก์ชัน fetchAllDataForMonth ในไฟล์ Report.jsx (ถ้ามี)
-  const fetchAllDataForMonth = async () => {
+  // แก้ไขฟังก์ชัน fetchAllDataForRange ในไฟล์ Report.jsx
+  const fetchAllDataForRange = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const startDate = format(
-        startOfMonth(new Date(selectedMonth)),
-        "yyyy-MM-dd"
-      );
-      const endDate = format(endOfMonth(new Date(selectedMonth)), "yyyy-MM-dd");
-
       // ดึงข้อมูลทั้งหมดไม่มีเงื่อนไข (ไม่ต้องแก้ส่วนนี้เพราะไม่มีการกรองด้วย text)
       const { data: tourData, error: tourError } = await supabase
         .from("tour_bookings")
@@ -535,10 +523,7 @@ const Report = () => {
       setSelectedTransferIds(new Set());
 
       showSuccess(
-        `Showing all data for ${format(
-          new Date(selectedMonth),
-          "MMMM yyyy"
-        )}`
+        `Showing all data from ${format(new Date(startDate), "dd/MM/yyyy")} to ${format(new Date(endDate), "dd/MM/yyyy")}`
       );
     } catch (err) {
       console.error("Error fetching all data:", err);
@@ -859,11 +844,11 @@ const Report = () => {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h3 className="text-lg font-semibold mb-4">Data Filters</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          {/* Month Filter */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+          {/* Start Date Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Month/Year
+              Start Date
             </label>
             <div className="relative">
               <Calendar
@@ -871,9 +856,28 @@ const Report = () => {
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
               />
               <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="pl-10 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* End Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              End Date
+            </label>
+            <div className="relative">
+              <Calendar
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="pl-10 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -951,12 +955,12 @@ const Report = () => {
               Reset
             </button>
             <button
-              onClick={fetchAllDataForMonth}
+              onClick={fetchAllDataForRange}
               disabled={loading}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Calendar size={18} className="mr-2" />
-              Show Full Month
+              Show All Data
             </button>
           </div>
 
@@ -973,22 +977,6 @@ const Report = () => {
               >
                 <option value="combined">Combined</option>
                 <option value="separate">Separate Tour/Transfer</option>
-              </select>
-            </div>
-
-            {/* Export Range Dropdown */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                Period:
-              </label>
-              <select
-                value={exportRange}
-                onChange={(e) => setExportRange(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="first_15">First 15 Days</option>
-                <option value="last_15">Last 15 Days</option>
-                <option value="full_month">Full Month</option>
               </select>
             </div>
 
@@ -1173,9 +1161,9 @@ const Report = () => {
           }
           onConfirm={handleConfirmExport}
           onCancel={() => setIsExportModalOpen(false)}
-          selectedMonth={selectedMonth}
+          startDate={startDate}
+          endDate={endDate}
           exportFormat={exportFormat}
-          exportRange={exportRange}
         />
       )}
     </div>

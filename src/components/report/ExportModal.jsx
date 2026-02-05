@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 import {
   X,
   CheckSquare,
@@ -15,9 +15,9 @@ const ExportModal = ({
   transferBookings,
   onConfirm,
   onCancel,
-  selectedMonth,
+  startDate,
+  endDate,
   exportFormat,
-  exportRange,
 }) => {
   // States
   const [selectedTourIds, setSelectedTourIds] = useState(new Set());
@@ -26,44 +26,17 @@ const ExportModal = ({
   const [filteredTourBookings, setFilteredTourBookings] = useState([]);
   const [filteredTransferBookings, setFilteredTransferBookings] = useState([]);
 
-  // Filter bookings by export range
+  // Filter bookings by date range
   const filterBookingsByRange = (bookings, type) => {
     if (!bookings || bookings.length === 0) return [];
-
-    const monthStart = startOfMonth(new Date(selectedMonth));
-    const monthEnd = endOfMonth(new Date(selectedMonth));
-
-    let startDate, endDate;
-
-    switch (exportRange) {
-      case "first_15":
-        startDate = monthStart;
-        endDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), 15);
-        break;
-      case "last_15":
-        startDate = new Date(
-          monthStart.getFullYear(),
-          monthStart.getMonth(),
-          16
-        );
-        endDate = monthEnd;
-        break;
-      case "full_month":
-      default:
-        startDate = monthStart;
-        endDate = monthEnd;
-        break;
-    }
 
     const dateField = type === "tour" ? "tour_date" : "transfer_date";
 
     return bookings.filter((booking) => {
       const bookingDate = new Date(booking[dateField]);
       const bookingDateOnly = format(bookingDate, "yyyy-MM-dd");
-      const startDateOnly = format(startDate, "yyyy-MM-dd");
-      const endDateOnly = format(endDate, "yyyy-MM-dd");
 
-      return bookingDateOnly >= startDateOnly && bookingDateOnly <= endDateOnly;
+      return bookingDateOnly >= startDate && bookingDateOnly <= endDate;
     });
   };
 
@@ -77,7 +50,7 @@ const ExportModal = ({
 
     setFilteredTourBookings(newFilteredTours);
     setFilteredTransferBookings(newFilteredTransfers);
-  }, [tourBookings, transferBookings, selectedMonth, exportRange]);
+  }, [tourBookings, transferBookings, startDate, endDate]);
 
   // Initialize all bookings as selected when filtered bookings change
   useEffect(() => {
@@ -369,14 +342,8 @@ const ExportModal = ({
               Export Preview
             </h2>
             <p className="text-gray-600 mt-1">
-              {format(new Date(selectedMonth), "MMMM yyyy")} (
-              {exportFormat === "combined" ? "Combined" : "Separate"} •{" "}
-              {exportRange === "first_15"
-                ? "First 15 Days"
-                : exportRange === "last_15"
-                ? "Last 15 Days"
-                : "Full Month"}
-              )
+              {format(new Date(startDate), "dd/MM/yyyy")} - {format(new Date(endDate), "dd/MM/yyyy")} (
+              {exportFormat === "combined" ? "Combined" : "Separate"})
             </p>
           </div>
           <button

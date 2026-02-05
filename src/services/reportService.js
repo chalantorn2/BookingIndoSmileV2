@@ -1,15 +1,9 @@
 import ExcelJS from "exceljs";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 
-const generateFileName = (
-  selectedMonth,
-  exportRange,
-  exportFormat,
-  selectedFilters
-) => {
-  const monthEng = format(new Date(selectedMonth), "MMMM");
-  const year = format(new Date(selectedMonth), "yyyy");
-  const rangeTextEng = getRangeTextEng(exportRange);
+const generateFileName = (startDate, endDate, selectedFilters) => {
+  const startFormatted = format(new Date(startDate), "ddMMyyyy");
+  const endFormatted = format(new Date(endDate), "ddMMyyyy");
   const dateCreated = format(new Date(), "yyyyMMdd");
 
   const agentCount = selectedFilters.agents?.length || 0;
@@ -40,29 +34,24 @@ const generateFileName = (
     filterText = "All";
   }
 
-  return `Report${filterText}${monthEng}${year}${rangeTextEng}${dateCreated}.xlsx`;
+  return `Report${filterText}_${startFormatted}-${endFormatted}_${dateCreated}.xlsx`;
 };
 
 /**
  * ฟังก์ชันสำหรับ export รายงานเป็นไฟล์ Excel
  * @param {Array} tourBookings - รายการจอง tour
  * @param {Array} transferBookings - รายการจอง transfer
- * @param {string} selectedMonth - เดือนที่เลือก (YYYY-MM)
- * @param {string} exportRange - ช่วงเวลา (first_15, last_15, full_month)
+ * @param {string} startDate - วันที่เริ่มต้น (YYYY-MM-DD)
+ * @param {string} endDate - วันที่สิ้นสุด (YYYY-MM-DD)
  * @param {string} exportFormat - รูปแบบ (combined, separate)
- * @param {string} filterType - ประเภทตัวกรอง (agent, tour_recipient, transfer_recipient)
- * @param {string} selectedTourRecipient - ผู้รับ tour ที่เลือก
- * @param {string} selectedTransferRecipient - ผู้รับ transfer ที่เลือก
+ * @param {object} selectedFilters - ตัวกรองที่เลือก
  */
 export const exportReportToExcel = async (
   tourBookings,
   transferBookings,
-  selectedMonth,
-  exportRange,
+  startDate,
+  endDate,
   exportFormat = "combined",
-  filterType = "agent",
-  selectedTourRecipient = "",
-  selectedTransferRecipient = "",
   selectedFilters = {
     agents: [],
     tourRecipients: [],
@@ -76,62 +65,16 @@ export const exportReportToExcel = async (
     workbook.created = new Date();
     workbook.modified = new Date();
 
-    const filteredTourBookings = filterBookingsByRange(
-      tourBookings,
-      selectedMonth,
-      exportRange,
-      "tour"
-    );
-    const filteredTransferBookings = filterBookingsByRange(
-      transferBookings,
-      selectedMonth,
-      exportRange,
-      "transfer"
-    );
+    // ข้อมูลถูก filter มาแล้วจาก Report.jsx ไม่ต้อง filter อีก
+    const filteredTourBookings = tourBookings;
+    const filteredTransferBookings = transferBookings;
 
-    const monthName = format(new Date(selectedMonth), "MMMM");
-    const year = format(new Date(selectedMonth), "yyyy");
-    const rangeTextEng = getRangeTextEng(exportRange);
+    const dateRangeText = `${format(new Date(startDate), "dd/MM/yyyy")} - ${format(new Date(endDate), "dd/MM/yyyy")}`;
+    const sheetName = format(new Date(startDate), "MMM-yyyy");
 
-    let typeText = "All";
     let reportName = "Booking List";
-    if (exportFormat === "separate") {
-      if (filteredTourBookings.length > 0) {
-        typeText =
-          filterType === "tour_recipient" && selectedTourRecipient
-            ? `Tour${selectedTourRecipient}`
-            : "Tour";
-        reportName =
-          filterType === "tour_recipient" && selectedTourRecipient
-            ? `Tour Booking List ${selectedTourRecipient}`
-            : "Tour Booking List";
-      } else if (filteredTransferBookings.length > 0) {
-        typeText =
-          filterType === "transfer_recipient" && selectedTransferRecipient
-            ? `Transfer${selectedTransferRecipient}`
-            : "Transfer";
-        reportName =
-          filterType === "transfer_recipient" && selectedTransferRecipient
-            ? `Transfer Booking List ${selectedTransferRecipient}`
-            : "Transfer Booking List";
-      }
-    } else if (filterType === "tour_recipient" && selectedTourRecipient) {
-      typeText = `Tour${selectedTourRecipient}`;
-      reportName = `Tour Booking List ${selectedTourRecipient}`;
-    } else if (
-      filterType === "transfer_recipient" &&
-      selectedTransferRecipient
-    ) {
-      typeText = `Transfer${selectedTransferRecipient}`;
-      reportName = `Transfer Booking List ${selectedTransferRecipient}`;
-    }
 
-    const fileName = generateFileName(
-      selectedMonth,
-      exportRange,
-      exportFormat,
-      selectedFilters
-    );
+    const fileName = generateFileName(startDate, endDate, selectedFilters);
 
     const hasTour = filteredTourBookings.length > 0;
     const hasTransfer = filteredTransferBookings.length > 0;
@@ -146,11 +89,7 @@ export const exportReportToExcel = async (
         await setupTourSheet(
           tourWorksheet,
           filteredTourBookings,
-          monthName,
-          year,
-          exportRange,
-          filterType,
-          selectedTourRecipient
+          dateRangeText
         );
       }
 
@@ -159,22 +98,16 @@ export const exportReportToExcel = async (
         await setupTransferSheet(
           transferWorksheet,
           filteredTransferBookings,
-          monthName,
-          year,
-          exportRange,
-          filterType,
-          selectedTransferRecipient
+          dateRangeText
         );
       }
     } else {
-      const worksheet = workbook.addWorksheet(monthName);
+      const worksheet = workbook.addWorksheet(sheetName);
       await setupCombinedSheet(
         worksheet,
         filteredTourBookings,
         filteredTransferBookings,
-        monthName,
-        year,
-        exportRange,
+        dateRangeText,
         reportName
       );
     }
@@ -206,75 +139,12 @@ export const exportReportToExcel = async (
   }
 };
 
-const filterBookingsByRange = (bookings, selectedMonth, exportRange, type) => {
-  if (!bookings || bookings.length === 0) return [];
-
-  const monthStart = startOfMonth(new Date(selectedMonth));
-  const monthEnd = endOfMonth(new Date(selectedMonth));
-
-  let startDate, endDate;
-
-  switch (exportRange) {
-    case "first_15":
-      startDate = monthStart;
-      // แก้ไข: ใช้วันที่ 15 เท่านั้น
-      endDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), 15);
-      break;
-    case "last_15":
-      startDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), 16);
-      endDate = monthEnd;
-      break;
-    case "full_month":
-    default:
-      startDate = monthStart;
-      endDate = monthEnd;
-      break;
-  }
-
-  const dateField = type === "tour" ? "tour_date" : "transfer_date";
-
-  return bookings.filter((booking) => {
-    const bookingDate = new Date(booking[dateField]);
-    // แก้ไข: ใช้วันที่อย่างเดียว ไม่เอาเวลา
-    const bookingDateOnly = format(bookingDate, "yyyy-MM-dd");
-    const startDateOnly = format(startDate, "yyyy-MM-dd");
-    const endDateOnly = format(endDate, "yyyy-MM-dd");
-
-    return bookingDateOnly >= startDateOnly && bookingDateOnly <= endDateOnly;
-  });
-};
-
-const getRangeText = (exportRange) => {
-  switch (exportRange) {
-    case "first_15":
-      return "First 15 Days";
-    case "last_15":
-      return "Last 15 Days";
-    case "full_month":
-    default:
-      return "Full Month";
-  }
-};
-
-const getRangeTextEng = (exportRange) => {
-  switch (exportRange) {
-    case "first_15":
-      return "First15Days";
-    case "last_15":
-      return "Last15Days";
-    case "full_month":
-    default:
-      return "FullMonth";
-  }
-};
 
 const setupCombinedSheet = async (
   worksheet,
   tourBookings,
   transferBookings,
-  monthName,
-  year,
-  exportRange,
+  dateRangeText,
   reportName
 ) => {
   const allBookings = [
@@ -311,9 +181,7 @@ const setupCombinedSheet = async (
   };
   worksheet.getCell("A1").alignment = { horizontal: "center" };
 
-  worksheet.getCell("A2").value = `${monthName} ${year} (${getRangeText(
-    exportRange
-  )})`;
+  worksheet.getCell("A2").value = dateRangeText;
   worksheet.getCell("A2").font = {
     size: 14,
     bold: true,
@@ -321,8 +189,8 @@ const setupCombinedSheet = async (
   };
   worksheet.getCell("A2").alignment = { horizontal: "center" };
 
-  worksheet.mergeCells("A1:S1"); // เปลี่ยนจาก R1 เป็น S1
-  worksheet.mergeCells("A2:S2"); // เปลี่ยนจาก R2 เป็น S2
+  worksheet.mergeCells("A1:S1");
+  worksheet.mergeCells("A2:S2");
 
   let currentRow = 4;
   const columnWidths = Array(19).fill(10); // เพิ่มจาก 18 เป็น 19
@@ -518,11 +386,7 @@ const setupCombinedSheet = async (
 const setupTransferSheet = async (
   worksheet,
   transferBookings,
-  monthName,
-  year,
-  exportRange,
-  filterType,
-  selectedTransferRecipient
+  dateRangeText
 ) => {
   const groupedByDate = {};
   transferBookings.forEach((booking) => {
@@ -537,11 +401,7 @@ const setupTransferSheet = async (
 
   const sortedDates = Object.keys(groupedByDate).sort();
 
-  const reportName =
-    filterType === "transfer_recipient" && selectedTransferRecipient
-      ? `Transfer Booking List ${selectedTransferRecipient}`
-      : "Transfer Booking List";
-  worksheet.getCell("A1").value = reportName;
+  worksheet.getCell("A1").value = "Transfer Booking List";
   worksheet.getCell("A1").font = {
     size: 16,
     bold: true,
@@ -549,9 +409,7 @@ const setupTransferSheet = async (
   };
   worksheet.getCell("A1").alignment = { horizontal: "center" };
 
-  worksheet.getCell("A2").value = `${monthName} ${year} (${getRangeText(
-    exportRange
-  )})`;
+  worksheet.getCell("A2").value = dateRangeText;
   worksheet.getCell("A2").font = {
     size: 14,
     bold: true,
@@ -559,8 +417,8 @@ const setupTransferSheet = async (
   };
   worksheet.getCell("A2").alignment = { horizontal: "center" };
 
-  worksheet.mergeCells("A1:P1"); // เปลี่ยนจาก O1 เป็น P1
-  worksheet.mergeCells("A2:P2"); // เปลี่ยนจาก O2 เป็น P2
+  worksheet.mergeCells("A1:P1");
+  worksheet.mergeCells("A2:P2");
 
   let currentRow = 4;
   const columnWidths = Array(16).fill(10); // เพิ่มจาก 15 เป็น 16
@@ -753,11 +611,7 @@ const setupTransferSheet = async (
 const setupTourSheet = async (
   worksheet,
   tourBookings,
-  monthName,
-  year,
-  exportRange,
-  filterType,
-  selectedTourRecipient
+  dateRangeText
 ) => {
   const groupedByDate = {};
   tourBookings.forEach((booking) => {
@@ -770,11 +624,7 @@ const setupTourSheet = async (
 
   const sortedDates = Object.keys(groupedByDate).sort();
 
-  const reportName =
-    filterType === "tour_recipient" && selectedTourRecipient
-      ? `Tour Booking List ${selectedTourRecipient}`
-      : "Tour Booking List";
-  worksheet.getCell("A1").value = reportName;
+  worksheet.getCell("A1").value = "Tour Booking List";
   worksheet.getCell("A1").font = {
     size: 16,
     bold: true,
@@ -782,9 +632,7 @@ const setupTourSheet = async (
   };
   worksheet.getCell("A1").alignment = { horizontal: "center" };
 
-  worksheet.getCell("A2").value = `${monthName} ${year} (${getRangeText(
-    exportRange
-  )})`;
+  worksheet.getCell("A2").value = dateRangeText;
   worksheet.getCell("A2").font = {
     size: 14,
     bold: true,
@@ -792,8 +640,8 @@ const setupTourSheet = async (
   };
   worksheet.getCell("A2").alignment = { horizontal: "center" };
 
-  worksheet.mergeCells("A1:N1"); // เปลี่ยนจาก M1 เป็น N1
-  worksheet.mergeCells("A2:N2"); // เปลี่ยนจาก M2 เป็น N2
+  worksheet.mergeCells("A1:N1");
+  worksheet.mergeCells("A2:N2");
 
   let currentRow = 4;
   const columnWidths = Array(14).fill(10); // เพิ่มจาก 13 เป็น 14
