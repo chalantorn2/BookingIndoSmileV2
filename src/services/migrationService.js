@@ -1,4 +1,5 @@
 import supabase from "../config/supabaseClient";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ดึงข้อมูลทั้งหมดใน category เพื่อให้เลือก master และ duplicates
@@ -209,6 +210,14 @@ export const mergeInformationRecords = async (
 
     if (updateError) throw updateError;
 
+    // Dual-write master update
+    syncToNewDb("information", "update", {
+      id: masterId,
+      description: mergedData.description,
+      phone: mergedData.phone,
+      updated_at: new Date().toISOString(),
+    });
+
     // อัพเดท references ในตารางอื่น ⭐ ส่วนที่สำคัญที่แก้ไข
     console.log(`🔄 Updating references in other tables...`);
     await updateReferences(master, duplicates);
@@ -221,6 +230,11 @@ export const mergeInformationRecords = async (
       .in("id", duplicateIds);
 
     if (deleteError) throw deleteError;
+
+    // Dual-write duplicate deletes
+    duplicateIds.forEach((id) => {
+      syncToNewDb("information", "delete", { id });
+    });
 
     console.log(`✅ Merge completed successfully`);
     return { success: true, error: null };
@@ -285,6 +299,11 @@ const updateReferences = async (master, duplicates) => {
         console.log(
           `✅ Updated ${ordersUpdated?.length || 0} orders.agent_id records`
         );
+        
+        // Sync orders agent_id updates
+        ordersUpdated?.forEach((order) => {
+            syncToNewDb("orders", "update", { id: order.id, agent_id: master.id });
+        });
       }
 
       // 2. อัพเดท agent_name ใน orders (Text Field)
@@ -310,6 +329,11 @@ const updateReferences = async (master, duplicates) => {
           } orders.agent_name records`
         );
 
+        // Sync orders agent_name updates
+        ordersNameUpdated?.forEach((order) => {
+            syncToNewDb("orders", "update", { id: order.id, agent_name: master.value });
+        });
+
         // 3. อัพเดท agent_name ใน payments
         console.log(`🔄 Updating payments.agent_name...`);
         const { data: paymentsUpdated, error: paymentsError } = await supabase
@@ -330,6 +354,11 @@ const updateReferences = async (master, duplicates) => {
             paymentsUpdated?.length || 0
           } payments.agent_name records`
         );
+
+        // Sync payments agent_name updates
+        paymentsUpdated?.forEach((payment) => {
+            syncToNewDb("payments", "update", { id: payment.id, agent_name: master.value });
+        });
       }
     }
 
@@ -357,6 +386,11 @@ const updateReferences = async (master, duplicates) => {
             tourUpdated?.length || 0
           } tour_bookings.${field} records`
         );
+
+        // Sync tour_bookings updates
+        tourUpdated?.forEach((booking) => {
+            syncToNewDb("tour_bookings", "update", { id: booking.id, [field]: master.value });
+        });
       }
     }
 
@@ -387,6 +421,11 @@ const updateReferences = async (master, duplicates) => {
             transferUpdated?.length || 0
           } transfer_bookings.${field} records`
         );
+
+        // Sync transfer_bookings updates
+        transferUpdated?.forEach((booking) => {
+            syncToNewDb("transfer_bookings", "update", { id: booking.id, [field]: master.value });
+        });
       }
     }
 

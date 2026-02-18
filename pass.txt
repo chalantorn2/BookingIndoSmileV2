@@ -1,1 +1,3 @@
 supabase password: RS50uu5fN0iFdAbm
+
+dump: btWF2nI2NhUK1kSD

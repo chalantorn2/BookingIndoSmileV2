@@ -1,4 +1,5 @@
 import supabase from "../config/supabaseClient";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ตรวจสอบข้อมูลซ้ำก่อนเพิ่ม
@@ -211,6 +212,10 @@ export const addInformation = async (informationData) => {
     }
 
     console.log("✅ Successfully added information:", data);
+    
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("information", "insert", data);
+
     return { data, error: null };
   } catch (error) {
     console.error("💥 Exception in addInformation:", error);
@@ -315,6 +320,10 @@ export const updateInformation = async (id, updatedData) => {
     }
 
     console.log(`✅ Successfully updated information ID ${id}:`, data);
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("information", "update", data);
+
     return { success: true, data, error: null };
   } catch (error) {
     console.error(`💥 Exception in updateInformation for ID ${id}:`, error);
@@ -355,6 +364,10 @@ export const deactivateInformation = async (id) => {
     }
 
     console.log(`✅ Successfully deactivated information ID ${id}:`, data);
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("information", "update", data);
+
     return { success: true, error: null };
   } catch (error) {
     console.error(`💥 Exception in deactivateInformation for ID ${id}:`, error);
