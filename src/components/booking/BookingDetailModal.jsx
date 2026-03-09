@@ -140,11 +140,18 @@ const BookingDetailModal = ({
     }
   };
 
+  const getEffectivePax = (detail) => {
+    if (detail.pax !== undefined && detail.pax !== '' && detail.pax !== null) {
+      return parseInt(detail.pax) || 0;
+    }
+    return getPaxByType(detail.type);
+  };
+
   const calculatePriceTotals = () => {
     let totalCost = 0;
     let totalSelling = 0;
     priceDetails.forEach(detail => {
-      const paxCount = getPaxByType(detail.type);
+      const paxCount = getEffectivePax(detail);
       totalCost += (parseFloat(detail.cost) || 0) * paxCount;
       totalSelling += (parseFloat(detail.sell) || 0) * paxCount;
     });
@@ -167,11 +174,16 @@ const BookingDetailModal = ({
         "pax_chd" in bookingDataToSave ||
         "pax_inf" in bookingDataToSave;
 
-      // คำนวณค่า pax รวม
-      const pax_adt = parseInt(bookingDataToSave.pax_adt || 0);
-      const pax_chd = parseInt(bookingDataToSave.pax_chd || 0);
-      const pax_inf = parseInt(bookingDataToSave.pax_inf || 0);
+      // คำนวณค่า pax รวม (แปลงเป็น integer เพื่อป้องกัน empty string ส่งไป DB)
+      const pax_adt = parseInt(bookingDataToSave.pax_adt) || 0;
+      const pax_chd = parseInt(bookingDataToSave.pax_chd) || 0;
+      const pax_inf = parseInt(bookingDataToSave.pax_inf) || 0;
       const totalPax = pax_adt + pax_chd + pax_inf;
+
+      // เขียนค่า parsed integers กลับเข้า bookingDataToSave
+      bookingDataToSave.pax_adt = pax_adt;
+      bookingDataToSave.pax_chd = pax_chd;
+      bookingDataToSave.pax_inf = pax_inf;
 
       // สร้างข้อมูลสำหรับอัปเดต pax
       const paxData = {
@@ -212,6 +224,7 @@ const BookingDetailModal = ({
         cost: parseFloat(d.cost) || 0,
         sell: parseFloat(d.sell) || 0,
         type: d.type,
+        pax: d.pax !== undefined && d.pax !== '' && d.pax !== null ? parseInt(d.pax) : null,
         remark: d.remark || ''
       }));
       const { totalCost: calcTotalCost, totalSelling: calcTotalSelling } = calculatePriceTotals();
@@ -716,7 +729,7 @@ const BookingDetailModal = ({
               <col style={{ width: '100px' }} />
               <col style={{ width: '100px' }} />
               <col style={{ width: '80px' }} />
-              <col style={{ width: '45px' }} />
+              <col style={{ width: '75px' }} />
               <col style={{ width: '110px' }} />
               <col style={{ width: '110px' }} />
               <col />
@@ -737,7 +750,8 @@ const BookingDetailModal = ({
             <tbody>
 
               {priceDetails.map((detail, index) => {
-                const paxCount = getPaxByType(detail.type);
+                const autoPax = getPaxByType(detail.type);
+                const paxCount = getEffectivePax(detail);
                 const subtotalCost = (parseFloat(detail.cost) || 0) * paxCount;
                 const subtotalSell = (parseFloat(detail.sell) || 0) * paxCount;
 
@@ -776,8 +790,16 @@ const BookingDetailModal = ({
                         <option value="chd">CHD</option>
                       </select>
                     </td>
-                    <td className="px-2 py-1.5 text-center text-gray-500 font-medium">
-                     {paxCount}
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="number"
+                        value={detail.pax !== undefined && detail.pax !== '' && detail.pax !== null ? detail.pax : ''}
+                        onChange={(e) => updatePriceRow(index, 'pax', e.target.value)}
+                        onWheel={(e) => e.target.blur()}
+                        className="w-full border border-gray-300 rounded p-1.5 text-center focus:border-blue-500 focus:ring focus:ring-blue-200"
+                        placeholder={autoPax}
+                        min="0"
+                      />
                     </td>
                     <td className="px-2 py-1.5 text-right font-medium text-gray-700">
                       {subtotalCost.toLocaleString()}

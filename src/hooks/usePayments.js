@@ -120,18 +120,34 @@ const usePayments = () => {
       const newRows = booking.price_details.map((detail, idx) => {
         let quantity;
         let bookingType;
+
+        // ถ้ามีค่า pax ที่กรอกเอง ใช้ค่านั้น
+        if (detail.pax !== undefined && detail.pax !== null && detail.pax !== '') {
+          quantity = parseInt(detail.pax) || 0;
+        } else {
+          switch (detail.type) {
+            case 'adt':
+              quantity = adtCount;
+              break;
+            case 'chd':
+              quantity = chdCount;
+              break;
+            case 'all':
+            default:
+              quantity = totalPax || 1;
+              break;
+          }
+        }
+
         switch (detail.type) {
           case 'adt':
-            quantity = adtCount;
             bookingType = 'ADL';
             break;
           case 'chd':
-            quantity = chdCount;
             bookingType = 'CHD';
             break;
           case 'all':
           default:
-            quantity = totalPax || 1;
             bookingType = '';
             break;
         }
