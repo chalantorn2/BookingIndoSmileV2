@@ -90,54 +90,91 @@ const usePayments = () => {
   // Add booking to payment calculation
 
   const addBookingToPayment = (booking, type) => {
-    const uniqueId = `${booking.id}-${Date.now()}`;
-    // Check if booking is already added
-    const existingIndex = selectedBookings.findIndex(
-      (b) => b.id === booking.id && b.type === type
-    );
+    // Calculate total pax count
+    const adtCount = parseInt(booking.pax_adt || 0);
+    const chdCount = parseInt(booking.pax_chd || 0);
+    const infCount = parseInt(booking.pax_inf || 0);
+    const totalPax = adtCount + chdCount + infCount;
 
-    if (existingIndex !== -1) {
-      // Update existing booking count
-      const updatedBookings = [...selectedBookings];
-      updatedBookings[existingIndex].chosenCount =
-        (updatedBookings[existingIndex].chosenCount || 0) + 1;
-      setSelectedBookings(updatedBookings);
+    // Create pax format as "ADT+CHD+INF"
+    let paxFormat = [];
+    if (adtCount > 0) paxFormat.push(adtCount);
+    if (chdCount > 0) paxFormat.push(chdCount);
+    if (infCount > 0) paxFormat.push(infCount);
+    const paxFormatString = paxFormat.join("+");
+
+    const baseData = {
+      type: type,
+      date: type === "tour" ? booking.tour_date : booking.transfer_date,
+      detail: type === "tour" ? booking.tour_detail : booking.transfer_detail,
+      hotel: type === "tour" ? booking.tour_hotel : "",
+      sendTo: booking.send_to || "",
+      pax: totalPax || 1,
+      paxFormat: paxFormatString,
+      status: booking.payment_status === "paid" ? "paid" : "notPaid",
+      chosenCount: 1,
+    };
+
+    // ถ้ามี price_details ให้สร้างหลายแถวตาม detail
+    if (booking.price_details && Array.isArray(booking.price_details) && booking.price_details.length > 0) {
+      const newRows = booking.price_details.map((detail, idx) => {
+        let quantity;
+        let bookingType;
+        switch (detail.type) {
+          case 'adt':
+            quantity = adtCount;
+            bookingType = 'ADL';
+            break;
+          case 'chd':
+            quantity = chdCount;
+            bookingType = 'CHD';
+            break;
+          case 'all':
+          default:
+            quantity = totalPax || 1;
+            bookingType = '';
+            break;
+        }
+
+        return {
+          ...baseData,
+          id: `${booking.id}-${detail.type}-${idx}-${Date.now()}`,
+          dbKey: booking.id,
+          cost: parseFloat(detail.cost) || 0,
+          quantity: quantity,
+          sellingPrice: parseFloat(detail.sell) || 0,
+          remark: detail.remark || '',
+          bookingType: bookingType,
+        };
+      });
+
+      setSelectedBookings([...selectedBookings, ...newRows]);
     } else {
-      // Calculate total pax count
-      const adtCount = parseInt(booking.pax_adt || 0);
-      const chdCount = parseInt(booking.pax_chd || 0);
-      const infCount = parseInt(booking.pax_inf || 0);
-      const totalPax = adtCount + chdCount + infCount;
+      // Original behavior - ไม่มี price details
+      const uniqueId = `${booking.id}-${Date.now()}`;
+      const existingIndex = selectedBookings.findIndex(
+        (b) => b.dbKey === booking.id && b.type === type
+      );
 
-      // Create pax format as "ADT+CHD+INF"
-      let paxFormat = [];
-      if (adtCount > 0) paxFormat.push(adtCount);
-      if (chdCount > 0) paxFormat.push(chdCount);
-      if (infCount > 0) paxFormat.push(infCount);
-      const paxFormatString = paxFormat.join("+");
+      if (existingIndex !== -1) {
+        const updatedBookings = [...selectedBookings];
+        updatedBookings[existingIndex].chosenCount =
+          (updatedBookings[existingIndex].chosenCount || 0) + 1;
+        setSelectedBookings(updatedBookings);
+      } else {
+        const bookingData = {
+          ...baseData,
+          id: uniqueId,
+          dbKey: booking.id,
+          cost: booking.cost_price || 0,
+          quantity: totalPax || 1,
+          sellingPrice: booking.selling_price || 0,
+          remark: "",
+          bookingType: "",
+        };
 
-      // Prepare booking data based on type
-      const bookingData = {
-        id: uniqueId, // Use unique ID
-        dbKey: booking.id, // Store database ID
-        type: type,
-        date: type === "tour" ? booking.tour_date : booking.transfer_date,
-        detail: type === "tour" ? booking.tour_detail : booking.transfer_detail,
-        hotel: type === "tour" ? booking.tour_hotel : "",
-        sendTo: booking.send_to || "",
-        pax: totalPax || 1,
-        paxFormat: paxFormatString,
-        cost: booking.cost_price || 0,
-        quantity: totalPax || 1,
-        sellingPrice: booking.selling_price || 0,
-        status: booking.payment_status === "paid" ? "paid" : "notPaid",
-        remark: "",
-        bookingType: "",
-        chosenCount: 1,
-      };
-
-      // Add to selected bookings
-      setSelectedBookings([...selectedBookings, bookingData]);
+        setSelectedBookings([...selectedBookings, bookingData]);
+      }
     }
   };
 

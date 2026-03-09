@@ -127,7 +127,7 @@ const PaymentRow = ({ booking, index, onRemove, onChange }) => {
           value={booking.bookingType}
           onChange={(e) => onChange(index, "bookingType", e.target.value)}
         >
-          <option value="">--Select--</option>
+          <option value="">ALL</option>
           <option value="ADL">ADL</option>
           <option value="CHD">CHD</option>
         </select>

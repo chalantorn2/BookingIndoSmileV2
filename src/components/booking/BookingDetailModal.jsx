@@ -8,6 +8,7 @@ import {
   Clock,
   Package,
   FileText,
+  PlusCircle,
 } from "lucide-react";
 import supabase from "../../config/supabaseClient";
 import { formatDate } from "../../utils/dateUtils";
@@ -28,6 +29,7 @@ const BookingDetailModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [priceDetails, setPriceDetails] = useState([{ cost: '', sell: '', type: 'all', remark: '' }]);
 
   // เพิ่ม Effect สำหรับการกดปุ่ม ESC
   useEffect(() => {
@@ -54,6 +56,20 @@ const BookingDetailModal = ({
         pax_chd: booking.pax_chd || 0,
         pax_inf: booking.pax_inf || 0,
       });
+
+      // Initialize price details
+      if (booking.price_details && Array.isArray(booking.price_details) && booking.price_details.length > 0) {
+        setPriceDetails(booking.price_details);
+      } else if (parseFloat(booking.cost_price) > 0 || parseFloat(booking.selling_price) > 0) {
+        setPriceDetails([{
+          cost: booking.cost_price || '',
+          sell: booking.selling_price || '',
+          type: 'all',
+          remark: ''
+        }]);
+      } else {
+        setPriceDetails([{ cost: '', sell: '', type: 'all', remark: '' }]);
+      }
 
       // ตรวจสอบว่าควรแสดงฟิลด์เพิ่มเติมหรือไม่ตามสถานะ
       const status = booking.status || "pending";
@@ -94,7 +110,47 @@ const BookingDetailModal = ({
     }
   };
 
-  // จัดการการส่งฟอร์ม
+  // Price Details functions
+  const addPriceRow = () => {
+    setPriceDetails([...priceDetails, { cost: '', sell: '', type: 'all', remark: '' }]);
+  };
+
+  const removePriceRow = (index) => {
+    const updated = priceDetails.filter((_, i) => i !== index);
+    setPriceDetails(updated.length > 0 ? updated : [{ cost: '', sell: '', type: 'all', remark: '' }]);
+  };
+
+  const updatePriceRow = (index, field, value) => {
+    const updated = [...priceDetails];
+    updated[index] = { ...updated[index], [field]: value };
+    setPriceDetails(updated);
+  };
+
+  const getPaxByType = (type) => {
+    const paxAdt = parseInt(formData.pax_adt) || 0;
+    const paxChd = parseInt(formData.pax_chd) || 0;
+    const paxInf = parseInt(formData.pax_inf) || 0;
+    const totalPax = paxAdt + paxChd + paxInf;
+
+    switch (type) {
+      case 'adt': return paxAdt;
+      case 'chd': return paxChd;
+      case 'all': return totalPax || 1;
+      default: return 1;
+    }
+  };
+
+  const calculatePriceTotals = () => {
+    let totalCost = 0;
+    let totalSelling = 0;
+    priceDetails.forEach(detail => {
+      const paxCount = getPaxByType(detail.type);
+      totalCost += (parseFloat(detail.cost) || 0) * paxCount;
+      totalSelling += (parseFloat(detail.sell) || 0) * paxCount;
+    });
+    return { totalCost, totalSelling };
+  };
+
   // จัดการการส่งฟอร์ม
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -150,6 +206,18 @@ const BookingDetailModal = ({
           throw new Error(`Unable to update bookings: ${bookingsError}`);
         }
       }
+ 
+      // คำนวณราคาจาก price details และบันทึก
+      const priceDetailsToSave = priceDetails.map(d => ({
+        cost: parseFloat(d.cost) || 0,
+        sell: parseFloat(d.sell) || 0,
+        type: d.type,
+        remark: d.remark || ''
+      }));
+      const { totalCost: calcTotalCost, totalSelling: calcTotalSelling } = calculatePriceTotals();
+      bookingDataToSave.price_details = priceDetailsToSave;
+      bookingDataToSave.cost_price = calcTotalCost;
+      bookingDataToSave.selling_price = calcTotalSelling;
 
       // 4. อัปเดตข้อมูลของ booking ที่กำลังแก้ไข
       const result = await onSave(bookingDataToSave);
@@ -391,15 +459,6 @@ const BookingDetailModal = ({
             },
           ],
         },
-        {
-          title: "Price and Notes",
-          icon: <FileText size={18} className="mr-2 text-green-600" />,
-          fields: [
-            { name: "cost_price", label: "Cost Price", type: "number" },
-            { name: "selling_price", label: "Selling Price", type: "number" },
-            { name: "note", label: "Notes", type: "textarea" },
-          ],
-        },
       ];
     } else {
       return [
@@ -553,16 +612,7 @@ const BookingDetailModal = ({
             { name: "car_model", label: "Car Model" },
             { name: "phone_number", label: "Phone Number" },
           ],
-        },
-        {
-          title: "Price and Notes",
-          icon: <FileText size={18} className="mr-2 text-blue-600" />,
-          fields: [
-            { name: "cost_price", label: "Cost Price", type: "number" },
-            { name: "selling_price", label: "Selling Price", type: "number" },
-            { name: "payment_note", label: "Notes", type: "textarea" },
-          ],
-        },
+        }, 
       ];
     }
   };
@@ -649,6 +699,158 @@ const BookingDetailModal = ({
     return statusMap[status] || status;
   };
 
+  // Render Price Details Section
+  const renderPriceDetailsSection = () => {
+    const isTour = bookingType === "tour";
+    const { totalCost, totalSelling } = calculatePriceTotals();
+
+    return (
+      <div className="mb-6">
+        <h4 className="text-lg font-medium mb-3 pb-2 border-b border-gray-200 flex items-center">
+          <FileText size={18} className={`mr-2 ${isTour ? "text-green-600" : "text-blue-600"}`} />
+          Price Details
+        </h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-gray-200 rounded table-fixed">
+            <colgroup>
+              <col style={{ width: '100px' }} />
+              <col style={{ width: '100px' }} />
+              <col style={{ width: '80px' }} />
+              <col style={{ width: '45px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col />
+              <col style={{ width: '40px' }} />
+            </colgroup>
+            <thead>
+              <tr className="bg-gray-50 text-gray-600">
+                <th className="px-2 py-2 text-left font-medium">Cost</th>
+                <th className="px-2 py-2 text-left font-medium">Sell</th>
+                <th className="px-2 py-2 text-left font-medium">Type</th>
+                <th className="px-2 py-2 text-center font-medium">Pax</th>
+                <th className="px-2 py-2 text-right font-medium">Subtotal Cost</th>
+                <th className="px-2 py-2 text-right font-medium">Subtotal Sell</th>
+                <th className="px-2 py-2 text-left font-medium">Remark</th>
+                <th className="px-2 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+
+              {priceDetails.map((detail, index) => {
+                const paxCount = getPaxByType(detail.type);
+                const subtotalCost = (parseFloat(detail.cost) || 0) * paxCount;
+                const subtotalSell = (parseFloat(detail.sell) || 0) * paxCount;
+
+                return (
+                  <tr key={index} className="border-t border-gray-100">
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="number"
+                        value={detail.cost || ''}
+                        onChange={(e) => updatePriceRow(index, 'cost', e.target.value)}
+                        onWheel={(e) => e.target.blur()}
+                        className="w-full border border-gray-300 rounded p-1.5 text-right focus:border-blue-500 focus:ring focus:ring-blue-200"
+                        placeholder="0"
+                        min="0"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="number"
+                        value={detail.sell || ''}
+                        onChange={(e) => updatePriceRow(index, 'sell', e.target.value)}
+                        onWheel={(e) => e.target.blur()}
+                        className="w-full border border-gray-300 rounded p-1.5 text-right focus:border-blue-500 focus:ring focus:ring-blue-200"
+                        placeholder="0"
+                        min="0"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <select
+                        value={detail.type}
+                        onChange={(e) => updatePriceRow(index, 'type', e.target.value)}
+                        className="w-full border border-gray-300 rounded p-1.5 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                      >
+                        <option value="all">ALL</option>
+                        <option value="adt">ADT</option>
+                        <option value="chd">CHD</option>
+                      </select>
+                    </td>
+                    <td className="px-2 py-1.5 text-center text-gray-500 font-medium">
+                     {paxCount}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-medium text-gray-700">
+                      {subtotalCost.toLocaleString()}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-medium text-gray-700">
+                      {subtotalSell.toLocaleString()}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="text"
+                        value={detail.remark || ''}
+                        onChange={(e) => updatePriceRow(index, 'remark', e.target.value)}
+                        className="w-full border border-gray-300 rounded p-1.5 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                        placeholder="Remark"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      {priceDetails.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removePriceRow(index)}
+                          className="text-red-400 hover:text-red-600 p-1"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50 border-t border-gray-200">
+                <td colSpan="4" className="px-3 py-2 text-right font-semibold text-gray-700">
+                  Total:
+                </td>
+                <td className="px-2 py-2 text-right font-bold text-gray-800">
+                  {totalCost.toLocaleString()}
+                </td>
+                <td className="px-2 py-2 text-right font-bold text-gray-800">
+                  {totalSelling.toLocaleString()}
+                </td>
+                <td colSpan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <button
+          type="button"
+          onClick={addPriceRow}
+          className={`mt-3 text-sm ${isTour ? "text-green-600 hover:text-green-800" : "text-blue-600 hover:text-blue-800"} flex items-center font-medium`}
+        >
+          <PlusCircle size={16} className="mr-1" />
+          Add Price Row
+        </button>
+
+        {/* Notes */}
+        <div className="mt-4">
+          <label className="block text-sm text-gray-700 mb-1">
+            {bookingType === "tour" ? "Notes" : "Payment Notes"}
+          </label>
+          <textarea
+            name={bookingType === "tour" ? "note" : "payment_note"}
+            value={formData[bookingType === "tour" ? "note" : "payment_note"] || ''}
+            onChange={handleChange}
+            className="w-full rounded-md p-2 border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+            rows={3}
+          />
+        </div>
+      </div>
+    );
+  };
+
   // ฟังก์ชันสร้างสี badge ตามสถานะ
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -733,6 +935,9 @@ const BookingDetailModal = ({
               </div>
             </div>
           ))}
+
+          {/* Price Details Section */}
+          {renderPriceDetailsSection()}
 
           {/* แสดงข้อความสถานะ */}
           {statusMessage.message && (
