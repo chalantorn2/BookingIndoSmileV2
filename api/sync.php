@@ -38,10 +38,22 @@ try {
 $inputJSON = file_get_contents('php://input');
 logDebug("Received Input: " . $inputJSON); // Log raw input
 
+if (!$inputJSON) {
+    logDebug("Input is empty (Possibly GET request or Redirect)");
+    // Don't exit with error immediately, let's see why. 
+    // Actually, if input is empty for POST, it's an issue.
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        logDebug("Empty POST body received.");
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Empty POST body"]);
+        exit();
+    }
+}
+
 $input = json_decode($inputJSON, true);
 
-if (!$input) {
-    logDebug("JSON Decode Error: " . json_last_error_msg());
+if (!$input && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    logDebug("JSON Decode Error: " . json_last_error_msg() . " | Raw Input: " . substr($inputJSON, 0, 100));
     http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Invalid JSON input"]);
     exit();
@@ -91,6 +103,8 @@ try {
         foreach ($data as $key => $value) {
             if (is_bool($value)) {
                 $value = $value ? 1 : 0;
+            } elseif (is_array($value) || is_object($value)) {
+                $value = json_encode($value);
             }
             $stmt->bindValue(":" . $key, $value);
         }
@@ -125,6 +139,8 @@ try {
         foreach ($data as $key => $value) {
             if (is_bool($value)) {
                 $value = $value ? 1 : 0;
+            } elseif (is_array($value) || is_object($value)) {
+                $value = json_encode($value);
             }
             $stmt->bindValue(":" . $key, $value);
         }

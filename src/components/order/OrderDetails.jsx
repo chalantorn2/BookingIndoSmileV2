@@ -22,6 +22,7 @@ import { useNotification } from "../../hooks/useNotification";
 import OrderVoucherList from "./OrderVoucherList";
 import OrderStatusBadge from "./OrderStatusBadge";
 import { deleteBooking } from "../../services/bookingService";
+import { deleteOrder } from "../../services/orderService";
 
 const OrderDetails = ({
   order,
@@ -211,12 +212,9 @@ const OrderDetails = ({
     if (confirmed) {
       try {
         setIsSubmitting(true);
-        const { error } = await supabase
-          .from("orders")
-          .delete()
-          .eq("id", order.id);
+        const { success, error } = await deleteOrder(order.id);
 
-        if (error) throw error;
+        if (!success) throw new Error(error);
 
         setStatusMessage({ type: "success", message: "ลบ Order สำเร็จ" });
         onOrderDeleted();

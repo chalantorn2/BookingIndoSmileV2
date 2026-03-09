@@ -1,4 +1,5 @@
 import supabase from "../config/supabaseClient";
+import { syncToNewDb } from "./migrationSync";
 
 export const fetchVoucherById = async (voucherId) => {
   try {
@@ -96,6 +97,9 @@ export const createVoucher = async (voucherData) => {
 
     if (error) throw error;
 
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("vouchers", "insert", data);
+
     if (voucherData.booking_id && voucherData.booking_type) {
       const tableName =
         voucherData.booking_type === "tour"
@@ -123,7 +127,19 @@ export const createVoucher = async (voucherData) => {
           .eq("id", bookingData.order_id);
 
         if (orderError) throw orderError;
+
+        // Sync Order Update
+        syncToNewDb("orders", "update", {
+          id: bookingData.order_id,
+          customer_signature: voucherData.customer_signature,
+        });
       }
+
+      // Sync Booking Update (voucher_created flag)
+      syncToNewDb(tableName, "update", {
+        id: voucherData.booking_id,
+        voucher_created: true,
+      });
     }
 
     return { data, error: null };
@@ -167,7 +183,17 @@ export const updateVoucher = async (voucherId, updateData) => {
         .eq("id", bookingData.order_id);
 
       if (orderError) throw orderError;
+    if (orderError) throw orderError;
+    
+        // Sync Order Update
+        syncToNewDb("orders", "update", {
+          id: bookingData.order_id,
+          customer_signature: updateData.customer_signature,
+        });
     }
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("vouchers", "update", { id: voucherId, ...updateData, updated_at: new Date().toISOString() });
 
     return { success: true, error: null };
   } catch (error) {
@@ -194,6 +220,12 @@ export const deleteVoucher = async (voucherId) => {
         .from(tableName)
         .update({ voucher_created: false })
         .eq("id", voucher.booking_id);
+
+      // Sync Booking Update
+      syncToNewDb(tableName, "update", {
+        id: voucher.booking_id,
+        voucher_created: false,
+      });
     }
 
     const { error } = await supabase
@@ -202,6 +234,10 @@ export const deleteVoucher = async (voucherId) => {
       .eq("id", voucherId);
 
     if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("vouchers", "delete", { id: voucherId });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error deleting voucher:", error);

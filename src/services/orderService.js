@@ -1,5 +1,6 @@
 import supabase from "../config/supabaseClient";
 import { generateOrderID } from "../utils/idGenerator";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ดึงข้อมูล orders ทั้งหมด พร้อมจำนวน bookings และ vouchers
@@ -276,6 +277,31 @@ export const fetchOrderBookings = async (orderId) => {
  * @param {Object} orderData - ข้อมูลที่ต้องการอัปเดต
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
+/**
+ * สร้าง order ใหม่
+ * @param {Object} orderData - ข้อมูล order
+ * @returns {Promise<{data: Object|null, error: string|null}>}
+ */
+export const createOrder = async (orderData) => {
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .insert(orderData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("orders", "insert", data);
+
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error creating order:", error);
+    return { data: null, error: error.message };
+  }
+};
+
 export const updateOrder = async (id, orderData) => {
   try {
     // อัปเดตเวลาแก้ไข
@@ -294,6 +320,11 @@ export const updateOrder = async (id, orderData) => {
       .eq("id", id);
 
     if (error) throw error;
+
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("orders", "update", { id, ...dataToUpdate, updated_at: new Date().toISOString() });
 
     return { success: true, error: null };
   } catch (error) {
@@ -320,6 +351,11 @@ export const updateOrderNote = async (id, note) => {
 
     if (error) throw error;
 
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("orders", "update", { id, note, updated_at: new Date().toISOString() });
+
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error updating order note ${id}:`, error);
@@ -344,6 +380,11 @@ export const updateOrderStatus = async (id, completed) => {
       .eq("id", id);
 
     if (error) throw error;
+
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("orders", "update", { id, completed, updated_at: new Date().toISOString() });
 
     return { success: true, error: null };
   } catch (error) {
@@ -392,6 +433,12 @@ export const deleteOrder = async (id) => {
     const { error } = await supabase.from("orders").delete().eq("id", id);
 
     if (error) throw error;
+
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    // MySQL schema has CASCADE DELETE, so deleting order should delete related bookings
+    syncToNewDb("orders", "delete", { id });
 
     return { success: true, error: null };
   } catch (error) {

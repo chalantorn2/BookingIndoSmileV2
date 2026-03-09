@@ -1,4 +1,5 @@
 import supabase from "../config/supabaseClient";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ดึงข้อมูลการจ่ายเงินตาม Order ID
@@ -63,6 +64,14 @@ export const savePayment = async (paymentData) => {
     }
 
     if (result.error) throw result.error;
+
+    // Dual-write to new DB (Silent Sync)
+    // result.data might be an object or array depending on Supabase version, usually object with single()
+    if (result.data) {
+        let action = existingPayment ? "update" : "insert";
+        syncToNewDb("payments", action, result.data);
+    }
+
     return { success: true, data: result.data, error: null };
   } catch (error) {
     console.error("Error saving payment:", error);
@@ -107,6 +116,11 @@ export const updatePaymentInvoiceStatus = async (paymentId, invoiced) => {
       .eq("id", paymentId);
 
     if (error) throw error;
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb("payments", "update", { id: paymentId, invoiced, updated_at: new Date().toISOString() });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error updating payment invoice status:", error);

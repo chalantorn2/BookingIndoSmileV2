@@ -12,6 +12,8 @@ import {
 import supabase from "../../config/supabaseClient";
 import { formatDate } from "../../utils/dateUtils";
 import { useAlertDialogContext } from "../../contexts/AlertDialogContext";
+import { updateBookingsPaxByOrderId } from "../../services/bookingService";
+import { updateOrder, fetchOrderById } from "../../services/orderService";
 
 const BookingDetailModal = ({
   booking,
@@ -69,15 +71,11 @@ const BookingDetailModal = ({
   // ดึงข้อมูล order จาก Supabase
   const fetchOrderData = async (orderId) => {
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single();
+      const { order, error } = await fetchOrderById(orderId);
 
       if (error) throw error;
 
-      setOrderData(data);
+      setOrderData(order);
     } catch (error) {
       console.error("Error fetching order data:", error);
     }
@@ -130,42 +128,26 @@ const BookingDetailModal = ({
       // ถ้ามีการเปลี่ยนแปลง pax และมี order_id
       if (hasPaxChanged && bookingDataToSave.order_id) {
         // 1. อัปเดตตาราง orders
-        const { error: orderError } = await supabase
-          .from("orders")
-          .update(paxData)
-          .eq("id", bookingDataToSave.order_id);
+        const { error: orderError } = await updateOrder(
+          bookingDataToSave.order_id,
+          paxData
+        );
 
         if (orderError) {
           console.error("Error updating orders:", orderError);
-          throw new Error(
-            `Unable to update orders: ${orderError.message}`
-          );
+          throw new Error(`Unable to update orders: ${orderError}`);
         }
 
-        // 2. อัปเดตตาราง tour_bookings ที่มี order_id เดียวกัน
-        const { error: tourError } = await supabase
-          .from("tour_bookings")
-          .update(paxData)
-          .eq("order_id", bookingDataToSave.order_id);
+        // 2. อัปเดตตาราง tour_bookings และ transfer_bookings ที่มี order_id เดียวกัน
+        // ใช้ service ที่เตรียมไว้เพื่อรองรับ Sync
+        const { error: bookingsError } = await updateBookingsPaxByOrderId(
+          bookingDataToSave.order_id,
+          paxData
+        );
 
-        if (tourError) {
-          console.error("Error updating tour_bookings:", tourError);
-          throw new Error(
-            `Unable to update tour_bookings: ${tourError.message}`
-          );
-        }
-
-        // 3. อัปเดตตาราง transfer_bookings ที่มี order_id เดียวกัน
-        const { error: transferError } = await supabase
-          .from("transfer_bookings")
-          .update(paxData)
-          .eq("order_id", bookingDataToSave.order_id);
-
-        if (transferError) {
-          console.error("Error updating transfer_bookings:", transferError);
-          throw new Error(
-            `Unable to update transfer_bookings: ${transferError.message}`
-          );
+        if (bookingsError) {
+          console.error("Error updating bookings pax:", bookingsError);
+          throw new Error(`Unable to update bookings: ${bookingsError}`);
         }
       }
 

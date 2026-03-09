@@ -5,6 +5,7 @@ import supabase from "../config/supabaseClient";
 import { useInformation } from "../contexts/InformationContext";
 import AutocompleteInput from "../components/common/AutocompleteInput";
 import BookingDetailModal from "../components/booking/BookingDetailModal";
+import { updateBooking, deleteBooking } from "../services/bookingService";
 import { useNotification } from "../hooks/useNotification";
 import { useAlertDialogContext } from "../contexts/AlertDialogContext";
 
@@ -95,18 +96,13 @@ const ViewPayment = () => {
   // เปลี่ยนสถานะการจ่ายเงิน
   const handlePaymentStatusChange = async (bookingId, status) => {
     try {
-      const table =
-        selectedType === "tour" ? "tour_bookings" : "transfer_bookings";
+      const { success, error } = await updateBooking(selectedType, {
+        id: bookingId,
+        payment_status: status,
+        payment_date: status === "paid" ? new Date().toISOString() : null,
+      });
 
-      const { error } = await supabase
-        .from(table)
-        .update({
-          payment_status: status,
-          payment_date: status === "paid" ? new Date().toISOString() : null,
-        })
-        .eq("id", bookingId);
-
-      if (error) throw error;
+      if (!success) throw new Error(error);
 
       // รีเฟรชข้อมูล
       fetchBookings(currentPage);
@@ -119,17 +115,12 @@ const ViewPayment = () => {
   // เพิ่มฟังก์ชันอัพเดทหมายเหตุ
   const handleNoteChange = async (bookingId, note) => {
     try {
-      const table =
-        selectedType === "tour" ? "tour_bookings" : "transfer_bookings";
+      const { success, error } = await updateBooking(selectedType, {
+        id: bookingId,
+        payment_note: note,
+      });
 
-      const { error } = await supabase
-        .from(table)
-        .update({
-          payment_note: note,
-        })
-        .eq("id", bookingId);
-
-      if (error) throw error;
+      if (!success) throw new Error(error);
 
       // รีเฟรชข้อมูล
       fetchBookings(currentPage);
@@ -470,14 +461,12 @@ const ViewPayment = () => {
           onSave={async (updatedBooking) => {
             try {
               // เรียกใช้ API เพื่ออัพเดทข้อมูลใน database
-              const table =
-                selectedType === "tour" ? "tour_bookings" : "transfer_bookings";
-              const { error } = await supabase
-                .from(table)
-                .update(updatedBooking)
-                .eq("id", updatedBooking.id);
+              const { success, error } = await updateBooking(
+                selectedType,
+                updatedBooking
+              );
 
-              if (error) throw error;
+              if (!success) throw new Error(error);
 
               // รีเฟรชข้อมูลและปิด modal
               await fetchBookings(currentPage);
@@ -503,14 +492,9 @@ const ViewPayment = () => {
 
               if (!confirmed) return { success: false };
 
-              const table =
-                selectedType === "tour" ? "tour_bookings" : "transfer_bookings";
-              const { error } = await supabase
-                .from(table)
-                .delete()
-                .eq("id", id);
+              const { success, error } = await deleteBooking(selectedType, id);
 
-              if (error) throw error;
+              if (!success) throw new Error(error);
 
               // รีเฟรชข้อมูลและปิด modal
               await fetchBookings(currentPage);

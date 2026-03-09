@@ -1,5 +1,6 @@
 // src/services/invoiceService.js
 import supabase from "../config/supabaseClient";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ดึงข้อมูล invoice ตาม invoice ID
@@ -83,6 +84,13 @@ export const createInvoice = async (invoiceData) => {
       .single();
 
     if (error) throw error;
+
+    // Sync to MySQL
+    // data is the inserted object
+    if (data) {
+      syncToNewDb("invoices", "insert", data);
+    }
+
     return { data, error: null };
   } catch (error) {
     console.error("Error creating invoice:", error);
@@ -104,6 +112,9 @@ export const updateInvoice = async (invoiceId, updateData) => {
       .eq("id", invoiceId);
 
     if (error) throw error;
+    // Sync to MySQL
+    syncToNewDb("invoices", "update", { id: invoiceId, ...updateData });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error updating invoice:", error);
@@ -123,12 +134,65 @@ export const updatePaymentsInvoiceStatus = async (paymentIds, invoiced) => {
     await Promise.all(
       paymentIds.map(async (id) => {
         await supabase.from("payments").update({ invoiced }).eq("id", id);
+        // Sync to MySQL
+        syncToNewDb("payments", "update", { id, invoiced: invoiced ? 1 : 0 });
       })
     );
 
     return { success: true, error: null };
   } catch (error) {
     console.error("Error updating payments invoice status:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * อัปเดต REF ของ Payment
+ * @param {number} paymentId - ID ของ payment
+ * @param {string} ref - เลข REF ใหม่
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export const updatePaymentRef = async (paymentId, ref) => {
+  try {
+    const { error } = await supabase
+      .from("payments")
+      .update({ ref })
+      .eq("id", paymentId);
+
+    if (error) throw error;
+
+    // Sync to MySQL
+    syncToNewDb("payments", "update", { id: paymentId, ref });
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating payment ref:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * อัปเดตข้อมูล Bookings (Fees) ของ Payment
+ * @param {number} paymentId - ID ของ payment
+ * @param {Array} bookings - ข้อมูล bookings ที่อัปเดตแล้ว
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export const updatePaymentBookings = async (paymentId, bookings) => {
+  try {
+    const { error } = await supabase
+      .from("payments")
+      .update({ bookings })
+      .eq("id", paymentId);
+
+    if (error) throw error;
+
+    // Sync to MySQL
+    // sync.php handles JSON serialization for arrays/objects
+    syncToNewDb("payments", "update", { id: paymentId, bookings });
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating payment bookings:", error);
     return { success: false, error: error.message };
   }
 };
@@ -151,6 +215,8 @@ export const deleteInvoice = async (invoiceId) => {
       .eq("id", invoiceId);
 
     if (error) throw error;
+    // Sync to MySQL
+    syncToNewDb("invoices", "delete", { id: invoiceId });
     return { success: true, error: null };
   } catch (error) {
     console.error("Error deleting invoice:", error);
@@ -175,6 +241,13 @@ export const updateInvoiceStatus = async (invoiceId, status) => {
       .eq("id", invoiceId);
 
     if (error) throw error;
+    // Sync to MySQL
+    syncToNewDb("invoices", "update", {
+      id: invoiceId,
+      status: status,
+      updated_at: new Date().toISOString(),
+    });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error updating invoice status:", error);
@@ -199,6 +272,13 @@ export const updateInvoiceAttachments = async (invoiceId, attachments) => {
       .eq("id", invoiceId);
 
     if (error) throw error;
+    // Sync to MySQL
+    syncToNewDb("invoices", "update", {
+      id: invoiceId,
+      attachments: attachments,
+      updated_at: new Date().toISOString(),
+    });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error updating invoice attachments:", error);
@@ -282,6 +362,16 @@ export const recalculateInvoiceTotals = async (invoiceId) => {
 
     if (updateError) throw updateError;
 
+    // Sync to MySQL
+    syncToNewDb("invoices", "update", {
+      id: invoiceId,
+      total_amount: totalAmount.toString(),
+      total_cost: totalCost.toString(),
+      total_selling_price: totalSellingPrice.toString(),
+      total_profit: totalProfit.toString(),
+      updated_at: new Date().toISOString(),
+    });
+
     return {
       success: true,
       data: {
@@ -314,6 +404,25 @@ export const findInvoicesByPaymentId = async (paymentId) => {
     return { data: data || [], error: null };
   } catch (error) {
     console.error("Error finding invoices by payment ID:", error);
+    return { data: [], error: error.message };
+  }
+};
+
+/**
+ * ดึงข้อมูล Payment ที่ยังไม่ได้ออก Invoice
+ * @returns {Promise<{data: Array, error: string|null}>}
+ */
+export const fetchNonInvoicedPayments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("payments")
+      .select("*")
+      .eq("invoiced", false);
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error("Error fetching non-invoiced payments:", error);
     return { data: [], error: error.message };
   }
 };

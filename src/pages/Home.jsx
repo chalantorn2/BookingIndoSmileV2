@@ -3,6 +3,8 @@ import { format } from "date-fns";
 import supabase from "../config/supabaseClient";
 import BookingList from "../components/booking/BookingList";
 import BookingDetailModal from "../components/booking/BookingDetailModal";
+import { updateBooking, deleteBooking } from "../services/bookingService";
+
 import BookingStatusLegend from "../components/booking/BookingStatusLegend";
 import CalendarHighlight from "../components/booking/CalendarHighlight";
 import { useNotification } from "../hooks/useNotification";
@@ -184,15 +186,9 @@ const Home = () => {
 
   const handleSaveBooking = async (updatedBooking) => {
     try {
-      const table =
-        bookingType === "tour" ? "tour_bookings" : "transfer_bookings";
+      const { success, error } = await updateBooking(bookingType, updatedBooking);
 
-      const { error } = await supabase
-        .from(table)
-        .update(updatedBooking)
-        .eq("id", updatedBooking.id);
-
-      if (error) throw error;
+      if (!success) throw new Error(error);
 
       fetchBookings(queryDate);
       setIsModalOpen(false);
@@ -206,12 +202,9 @@ const Home = () => {
 
   const handleDeleteBooking = async (id) => {
     try {
-      const table =
-        bookingType === "tour" ? "tour_bookings" : "transfer_bookings";
+      const { success, error } = await deleteBooking(bookingType, id);
 
-      const { error } = await supabase.from(table).delete().eq("id", id);
-
-      if (error) throw error;
+      if (!success) throw new Error(error);
 
       fetchBookings(queryDate);
       setIsModalOpen(false);

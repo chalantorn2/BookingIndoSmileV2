@@ -1,12 +1,21 @@
 // src/pages/BookingForm.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import supabase from "../config/supabaseClient";
+// import supabase from "../config/supabaseClient"; // Use services instead
 import OrderSelector from "../components/forms/OrderSelector";
 import TourForm from "../components/forms/TourForm";
 import TransferForm from "../components/forms/TransferForm";
 import BookingCounter from "../components/ui/BookingCounter";
 import { generateOrderID, generateBookingID } from "../utils/idGenerator";
-import { fetchInformationByCategory } from "../services/informationService";
+import {
+  fetchInformationByCategory,
+  addInformation,
+} from "../services/informationService";
+import { createBooking } from "../services/bookingService";
+import {
+  createOrder,
+  updateOrder,
+  fetchOrderBookings,
+} from "../services/orderService";
 import AutocompleteInput from "../components/common/AutocompleteInput";
 import { useInformation } from "../contexts/InformationContext";
 import { useNotification } from "../hooks/useNotification";
@@ -92,17 +101,13 @@ const BookingForm = () => {
 
   const handleAddNewAgent = async (value) => {
     try {
-      const { data, error } = await supabase
-        .from("information")
-        .insert({
-          category: "agent",
-          value: value.trim(),
-          description: "",
-          phone: "", // เพิ่มฟิลด์ phone
-          active: true,
-        })
-        .select()
-        .single();
+      const { data, error } = await addInformation({
+        category: "agent",
+        value: value.trim(),
+        description: "",
+        phone: "",
+        active: true,
+      });
       if (error) throw error;
       return data;
     } catch (error) {
@@ -139,7 +144,7 @@ const BookingForm = () => {
         (transfer, index) => ({
           id: index + 1,
           data: transfer,
-        })
+        }),
       );
       setTransferForms(formattedTransfers);
     } else {
@@ -250,14 +255,10 @@ const BookingForm = () => {
       });
 
       if (!mainFormData.agent) {
-        throw new Error(
-          "Please enter Agent first to use as Order ID prefix"
-        );
+        throw new Error("Please enter Agent first to use as Order ID prefix");
       }
       if (tourForms.length === 0 && transferForms.length === 0) {
-        throw new Error(
-          "Please add at least 1 Tour or Transfer booking"
-        );
+        throw new Error("Please add at least 1 Tour or Transfer booking");
       }
 
       // คำนวณค่า pax รวมจากค่า ADT, CHD, INF
@@ -280,21 +281,21 @@ const BookingForm = () => {
 
       if (!orderKey) {
         referenceId = await generateOrderID(mainFormData.agent);
-        const { data: newOrder, error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            first_name: mainFormData.firstName,
-            last_name: mainFormData.lastName,
-            agent_name: mainFormData.agent,
-            agent_id: agentId, // ✅ ตอนนี้ agentId ถูกประกาศแล้ว
-            reference_id: referenceId,
-            pax: totalPax.toString(),
-            pax_adt: parseInt(mainFormData.paxAdt) || 0,
-            pax_chd: parseInt(mainFormData.paxChd) || 0,
-            pax_inf: parseInt(mainFormData.paxInf) || 0,
-          })
-          .select()
-          .single();
+
+        const orderData = {
+          first_name: mainFormData.firstName,
+          last_name: mainFormData.lastName,
+          agent_name: mainFormData.agent,
+          agent_id: agentId,
+          reference_id: referenceId,
+          pax: totalPax.toString(),
+          pax_adt: parseInt(mainFormData.paxAdt) || 0,
+          pax_chd: parseInt(mainFormData.paxChd) || 0,
+          pax_inf: parseInt(mainFormData.paxInf) || 0,
+        };
+
+        const { data: newOrder, error: orderError } =
+          await createOrder(orderData);
 
         if (orderError) throw orderError;
         if (!newOrder) throw new Error("Unable to create new Order");
@@ -303,35 +304,32 @@ const BookingForm = () => {
         console.log("Order created with ID:", orderKey);
       } else {
         // อัพเดท order ที่มีอยู่แล้ว
-        const { error: updateError } = await supabase
-          .from("orders")
-          .update({
-            first_name: mainFormData.firstName,
-            last_name: mainFormData.lastName,
-            agent_name: mainFormData.agent,
-            agent_id: agentId, // ✅ ใช้ agentId ที่ประกาศแล้ว
-            pax: totalPax.toString(),
-            pax_adt: parseInt(mainFormData.paxAdt) || 0,
-            pax_chd: parseInt(mainFormData.paxChd) || 0,
-            pax_inf: parseInt(mainFormData.paxInf) || 0,
-          })
-          .eq("id", orderKey);
+        const updateData = {
+          first_name: mainFormData.firstName,
+          last_name: mainFormData.lastName,
+          agent_name: mainFormData.agent,
+          agent_id: agentId,
+          pax: totalPax.toString(),
+          pax_adt: parseInt(mainFormData.paxAdt) || 0,
+          pax_chd: parseInt(mainFormData.paxChd) || 0,
+          pax_inf: parseInt(mainFormData.paxInf) || 0,
+        };
+
+        const { error: updateError } = await updateOrder(orderKey, updateData);
 
         if (updateError) throw updateError;
       }
       console.log("orderKey after processing:", orderKey, typeof orderKey);
 
-      const { data: existingTours, error: tourError } = await supabase
-        .from("tour_bookings")
-        .select("tour_date")
-        .eq("order_id", orderKey);
-      if (tourError) throw tourError;
+      console.log("orderKey after processing:", orderKey, typeof orderKey);
 
-      const { data: existingTransfers, error: transferError } = await supabase
-        .from("transfer_bookings")
-        .select("transfer_date")
-        .eq("order_id", orderKey);
-      if (transferError) throw transferError;
+      const {
+        tourBookings: existingTours,
+        transferBookings: existingTransfers,
+        error: fetchError,
+      } = await fetchOrderBookings(orderKey);
+
+      if (fetchError) throw new Error(fetchError);
 
       const allDates = [
         ...(existingTours?.map((t) => t.tour_date) || []),
@@ -341,7 +339,7 @@ const BookingForm = () => {
       const formElements = document.forms[0].elements;
       console.log(
         "Form elements:",
-        Array.from(formElements).map((e) => ({ name: e.name, value: e.value }))
+        Array.from(formElements).map((e) => ({ name: e.name, value: e.value })),
       );
 
       const tourBookings = [];
@@ -450,33 +448,33 @@ const BookingForm = () => {
       console.log("Transfer bookings data:", transferBookings);
 
       if (tourBookings.length > 0) {
-        const { error: tourError } = await supabase
-          .from("tour_bookings")
-          .insert(tourBookings);
-        if (tourError) throw tourError;
+        for (const booking of tourBookings) {
+          const { error: tourError } = await createBooking("tour", booking);
+          if (tourError) throw tourError;
+        }
       }
 
       if (transferBookings.length > 0) {
-        const { error: transferError } = await supabase
-          .from("transfer_bookings")
-          .insert(transferBookings);
-        if (transferError) throw transferError;
+        for (const booking of transferBookings) {
+          const { error: transferError } = await createBooking(
+            "transfer",
+            booking,
+          );
+          if (transferError) throw transferError;
+        }
       }
 
       if (allDates.length > 0) {
         allDates.sort();
-        const { error: updateError } = await supabase
-          .from("orders")
-          .update({
-            start_date: allDates[0],
-            end_date: allDates[allDates.length - 1],
-          })
-          .eq("id", orderKey);
+        const { error: updateError } = await updateOrder(orderKey, {
+          start_date: allDates[0],
+          end_date: allDates[allDates.length - 1],
+        });
         if (updateError) throw updateError;
       }
 
       showSuccess(
-        `Data saved successfully! Tour: ${tourBookings.length}, Transfer: ${transferBookings.length}`
+        `Data saved successfully! Tour: ${tourBookings.length}, Transfer: ${transferBookings.length}`,
       );
       setStatus({ loading: false, error: "" });
       console.log("Submit success, message set: ");
@@ -533,9 +531,7 @@ const BookingForm = () => {
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-50 min-h-screen">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Add Booking
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Add Booking</h1>
         <p className="text-gray-600 mb-4">
           Please select a form to fill out or create a new booking
         </p>

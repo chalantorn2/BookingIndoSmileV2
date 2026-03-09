@@ -1,5 +1,6 @@
 import supabase from "../config/supabaseClient";
 import { format } from "date-fns";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ดึงข้อมูลการจองตามวันที่
@@ -16,7 +17,7 @@ export const fetchBookingsByDate = async (date) => {
         `
         *,
         orders(id, first_name, last_name, agent_name, reference_id, pax)
-      `
+      `,
       )
       .eq("tour_date", date);
 
@@ -29,7 +30,7 @@ export const fetchBookingsByDate = async (date) => {
         `
         *,
         orders(id, first_name, last_name, agent_name, reference_id, pax)
-      `
+      `,
       )
       .eq("transfer_date", date);
 
@@ -76,6 +77,11 @@ export const updateBooking = async (type, bookingData) => {
 
     if (error) throw error;
 
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb(table, "update", bookingData);
+
     return { success: true, error: null };
   } catch (error) {
     console.error(`Error updating ${type} booking:`, error);
@@ -96,6 +102,11 @@ export const deleteBooking = async (type, id) => {
     const { error } = await supabase.from(table).delete().eq("id", id);
 
     if (error) throw error;
+
+    if (error) throw error;
+
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb(table, "delete", { id });
 
     return { success: true, error: null };
   } catch (error) {
@@ -122,6 +133,9 @@ export const createBooking = async (type, bookingData) => {
 
     if (error) throw error;
 
+    // Dual-write to new DB (Silent Sync)
+    syncToNewDb(table, "insert", data);
+
     return { success: true, data, error: null };
   } catch (error) {
     console.error(`Error creating ${type} booking:`, error);
@@ -139,7 +153,7 @@ export const createBooking = async (type, bookingData) => {
 export const fetchBookingsByDateRange = async (
   startDate,
   endDate,
-  status = null
+  status = null,
 ) => {
   try {
     let tourQuery = supabase
@@ -148,7 +162,7 @@ export const fetchBookingsByDateRange = async (
         `
         *,
         orders(id, first_name, last_name, agent_name, reference_id)
-      `
+      `,
       )
       .gte("tour_date", startDate)
       .lte("tour_date", endDate);
@@ -159,7 +173,7 @@ export const fetchBookingsByDateRange = async (
         `
         *,
         orders(id, first_name, last_name, agent_name, reference_id)
-      `
+      `,
       )
       .gte("transfer_date", startDate)
       .lte("transfer_date", endDate);
@@ -190,5 +204,44 @@ export const fetchBookingsByDateRange = async (
       transferBookings: [],
       error: error.message,
     };
+  }
+};
+
+/**
+ * อัปเดตจำนวนคน (PAX) ของทุก booking ใน order
+ * @param {number} orderId - ID ของ order
+ * @param {object} paxData - ข้อมูล pax ที่ต้องการอัปเดต
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export const updateBookingsPaxByOrderId = async (orderId, paxData) => {
+  try {
+    // 1. ดึง tour bookings
+    const { data: tourBookings } = await supabase
+      .from("tour_bookings")
+      .select("id")
+      .eq("order_id", orderId);
+
+    if (tourBookings?.length > 0) {
+      for (const booking of tourBookings) {
+        await updateBooking("tour", { id: booking.id, ...paxData });
+      }
+    }
+
+    // 2. ดึง transfer bookings
+    const { data: transferBookings } = await supabase
+      .from("transfer_bookings")
+      .select("id")
+      .eq("order_id", orderId);
+
+    if (transferBookings?.length > 0) {
+      for (const booking of transferBookings) {
+        await updateBooking("transfer", { id: booking.id, ...paxData });
+      }
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating bookings pax:", error);
+    return { success: false, error: error.message };
   }
 };

@@ -8,7 +8,11 @@ import {
   updateInvoice,
   updatePaymentsInvoiceStatus,
   fetchInvoiceById,
+
   deleteInvoice,
+  updatePaymentRef,
+  updatePaymentBookings,
+  fetchNonInvoicedPayments,
 } from "../services/invoiceService";
 import "../styles/invoice.css";
 import HeaderInvoice from "../components/invoice/HeaderInvoice";
@@ -229,9 +233,16 @@ const Invoice = () => {
         throw new Error("Numeric value too high, cannot save");
       }
 
+      // Convert date from dd/MM/yyyy to YYYY-MM-DD for database
+      let formattedDate = invoiceDate;
+      if (invoiceDate && invoiceDate.includes("/")) {
+        const [day, month, year] = invoiceDate.split("/");
+        formattedDate = `${year}-${month}-${day}`;
+      }
+
       const invoiceData = {
         invoice_name: promptedInvoiceName,
-        invoice_date: invoiceDate,
+        invoice_date: formattedDate,
         payment_ids: selectedPaymentIds,
         total_amount: safeGrandTotal.toString(),
         total_cost: safeTotalCost.toString(),
@@ -244,22 +255,19 @@ const Invoice = () => {
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from("invoices")
-        .insert(invoiceData)
-        .select()
-        .single();
+      // Use service instead of direct Supabase call
+      const { data, error } = await createInvoice(invoiceData);
 
-      if (error) throw error;
+      if (error) throw new Error(error);
 
-      for (const paymentId of selectedPaymentIds) {
-        const { error: updateError } = await supabase
-          .from("payments")
-          .update({ invoiced: true })
-          .eq("id", paymentId);
-        if (updateError)
-          console.error(`Failed to update payment ${paymentId}:`, updateError);
-      }
+      // Status update is now handled in createInvoice (via syncToNewDb) 
+      // AND we might still need to update local payment status or re-fetch
+      // But let's keep the explicit update for safety if the service doesn't do it for ALL payments 
+      // (Actually createInvoice in service DOES NOT update payment status, only creates invoice)
+      // Wait, let's check invoiceService.js... 
+      // createInvoice in service ONLY inserts invoice. 
+      // So we DO need updatePaymentsInvoiceStatus.
+      await updatePaymentsInvoiceStatus(selectedPaymentIds, true);
 
       showSuccess(
         `Invoice saved successfully! Invoice: ${promptedInvoiceName}`,
@@ -422,7 +430,7 @@ const Invoice = () => {
 
       // ดึงข้อมูล Payment ที่ยังไม่ได้ออก Invoice
       const { data: nonInvoicedPaymentsData, error: nonInvoicedError } =
-        await supabase.from("payments").select("*").eq("invoiced", false);
+        await fetchNonInvoicedPayments();
 
       if (nonInvoicedError) throw nonInvoicedError;
 
@@ -732,11 +740,8 @@ const Invoice = () => {
     if (newRefValue === null) return;
     try {
       setLoading(true);
-      const { error } = await supabase
-        .from("payments")
-        .update({ ref: newRefValue })
-        .eq("id", paymentId);
-      if (error) throw error;
+      const { error } = await updatePaymentRef(paymentId, newRefValue);
+      if (error) throw new Error(error);
       showSuccess("REF updated successfully");
       buildInvoiceTable();
     } catch (error) {
@@ -758,11 +763,10 @@ const Invoice = () => {
       }
       const bookingsCopy = JSON.parse(JSON.stringify(payment.bookings));
       bookingsCopy[bookingIndex].fee = parseFloat(newFeeValue) || 0;
-      const { error } = await supabase
-        .from("payments")
-        .update({ bookings: bookingsCopy })
-        .eq("id", paymentId);
-      if (error) throw error;
+      
+      const { error } = await updatePaymentBookings(paymentId, bookingsCopy);
+      if (error) throw new Error(error);
+      
       showSuccess("Fee updated successfully");
       await loadInitialData();
       buildInvoiceTable();

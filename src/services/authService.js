@@ -1,5 +1,6 @@
 // src/services/authService.js
 import supabase from "../config/supabaseClient";
+import { syncToNewDb } from "./migrationSync";
 
 /**
  * ดึงข้อมูลผู้ใช้ทั้งหมด
@@ -68,6 +69,13 @@ export const createUser = async (userData) => {
       .single();
 
     if (error) throw error;
+    
+    // Sync to MySQL
+    // data is the inserted user object
+    if (data) {
+        syncToNewDb("users", "insert", data);
+    }
+
     return { success: true, data, error: null };
   } catch (error) {
     console.error("Error creating user:", error);
@@ -101,6 +109,10 @@ export const updateUser = async (userId, userData) => {
       .eq("id", userId);
 
     if (error) throw error;
+
+    // Sync to MySQL
+    syncToNewDb("users", "update", { id: userId, ...updates });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error updating user:", error);
@@ -134,6 +146,14 @@ export const changePassword = async (userId, newPassword) => {
       .eq("id", userId);
 
     if (error) throw error;
+
+    // Sync to MySQL
+    syncToNewDb("users", "update", {
+      id: userId,
+      password_hash: passwordHash,
+      updated_at: new Date().toISOString(),
+    });
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error changing password:", error);
@@ -163,6 +183,18 @@ export const deleteUser = async (userId, softDelete = true) => {
     }
 
     if (result.error) throw result.error;
+
+    // Sync to MySQL
+    if (softDelete) {
+        syncToNewDb("users", "update", {
+            id: userId,
+            active: false,
+            updated_at: new Date().toISOString(),
+        });
+    } else {
+        syncToNewDb("users", "delete", { id: userId });
+    }
+
     return { success: true, error: null };
   } catch (error) {
     console.error("Error deleting user:", error);
