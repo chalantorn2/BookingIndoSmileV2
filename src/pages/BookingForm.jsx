@@ -15,6 +15,7 @@ import {
   createOrder,
   updateOrder,
   fetchOrderBookings,
+  fetchOrderById,
 } from "../services/orderService";
 import AutocompleteInput from "../components/common/AutocompleteInput";
 import { useInformation } from "../contexts/InformationContext";
@@ -155,23 +156,16 @@ const BookingForm = () => {
   const loadOrderBasicDetails = async (orderKey) => {
     try {
       setStatus({ ...status, loading: true, error: "" });
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderKey)
-        .single();
-      if (error) throw error;
-
-      // แปลงค่า pax เดิมเป็นรูปแบบใหม่
-      const paxTotal = data.pax || "0";
+      const result = await fetchOrderById(orderKey);
+      const data = result.order;
 
       setMainFormData({
         agent: data.agent_name || "",
         firstName: data.first_name || "",
         lastName: data.last_name || "",
-        paxAdt: data.pax_adt?.toString() || "0", // ✅ ถูก
-        paxChd: data.pax_chd?.toString() || "0", // ✅ ถูก
-        paxInf: data.pax_inf?.toString() || "0", // ✅ ถูก
+        paxAdt: data.pax_adt?.toString() || "0",
+        paxChd: data.pax_chd?.toString() || "0",
+        paxInf: data.pax_inf?.toString() || "0",
       });
 
       setTourForms([]);
