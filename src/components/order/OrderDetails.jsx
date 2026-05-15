@@ -626,6 +626,11 @@ const OrderDetails = ({
                 <p>
                   <span className="font-medium text-gray-700">Agent:</span>{" "}
                   {order.agent_name || "N/A"}
+                  {order.agent_name === "Website" && (
+                    <span className="ml-2 inline-block px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 rounded">
+                      Website
+                    </span>
+                  )}
                 </p>
                 <p>
                   <span className="font-medium text-gray-700">PAX:</span> ADL:{" "}

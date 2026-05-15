@@ -202,6 +202,143 @@ export const updateVoucher = async (voucherId, updateData) => {
   }
 };
 
+export const fetchOtherVouchers = async ({ startDate, endDate, searchTerm } = {}) => {
+  try {
+    let query = supabase
+      .from("vouchers")
+      .select("*")
+      .is("booking_id", null)
+      .eq("booking_type", "accommodation")
+      .order("created_at", { ascending: false });
+
+    if (startDate) {
+      query = query.gte("accommodation_check_in", startDate);
+    }
+    if (endDate) {
+      query = query.lte("accommodation_check_in", endDate);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    let filtered = data || [];
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (v) =>
+          (v.customer_name && v.customer_name.toLowerCase().includes(term)) ||
+          (v.accommodation && v.accommodation.toLowerCase().includes(term)) ||
+          (v.contact_person && v.contact_person.toLowerCase().includes(term))
+      );
+    }
+
+    return { data: filtered, error: null };
+  } catch (error) {
+    console.error("Error fetching other vouchers:", error);
+    return { data: null, error: error.message };
+  }
+};
+
+export const createOtherVoucher = async (voucherData) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const { data: sequenceData, error: sequenceError } = await supabase
+      .from("sequences")
+      .select("*")
+      .eq("key", `voucher_${currentYear}`)
+      .single();
+
+    let nextSequence = 1;
+
+    if (sequenceError) {
+      if (sequenceError.code === "PGRST116") {
+        const { error: insertError } = await supabase
+          .from("sequences")
+          .insert({ key: `voucher_${currentYear}`, value: 1 })
+          .select()
+          .single();
+        if (insertError) throw insertError;
+      } else {
+        throw sequenceError;
+      }
+    } else {
+      nextSequence = sequenceData.value + 1;
+      const { error: updateError } = await supabase
+        .from("sequences")
+        .update({ value: nextSequence })
+        .eq("key", `voucher_${currentYear}`);
+      if (updateError) throw updateError;
+    }
+
+    const voucherNumber = String(nextSequence).padStart(4, "0");
+
+    const payload = {
+      ...voucherData,
+      booking_id: null,
+      booking_type: voucherData.booking_type || "accommodation",
+      year_number: currentYear.toString(),
+      sequence_number: voucherNumber,
+      created_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from("vouchers")
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    syncToNewDb("vouchers", "insert", data);
+
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error creating other voucher:", error);
+    return { data: null, error: error.message };
+  }
+};
+
+export const updateOtherVoucher = async (voucherId, updateData) => {
+  try {
+    const payload = {
+      ...updateData,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from("vouchers")
+      .update(payload)
+      .eq("id", voucherId);
+
+    if (error) throw error;
+
+    syncToNewDb("vouchers", "update", { id: voucherId, ...payload });
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating other voucher:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deleteOtherVoucher = async (voucherId) => {
+  try {
+    const { error } = await supabase
+      .from("vouchers")
+      .delete()
+      .eq("id", voucherId);
+
+    if (error) throw error;
+
+    syncToNewDb("vouchers", "delete", { id: voucherId });
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error deleting other voucher:", error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const deleteVoucher = async (voucherId) => {
   try {
     const { data: voucher, error: fetchError } = await supabase

@@ -16,6 +16,8 @@ import Payment from "./pages/Payment";
 import Invoice from "./pages/Invoice";
 import Voucher from "./pages/Voucher";
 import CreateVoucher from "./pages/CreateVoucher";
+import CreateOtherVoucher from "./pages/CreateOtherVoucher";
+import OtherVoucher from "./components/voucher/OtherVoucher";
 import Report from "./pages/Report";
 import Login from "./pages/Login";
 import UserManagement from "./pages/UserManagement";
@@ -60,6 +62,18 @@ const App = () => {
                     <Route
                       path="/create-voucher/:bookingType/:bookingId"
                       element={<CreateVoucher />}
+                    />
+                    <Route
+                      path="/other-vouchers"
+                      element={<OtherVoucher />}
+                    />
+                    <Route
+                      path="/other-vouchers/create/:type"
+                      element={<CreateOtherVoucher mode="create" />}
+                    />
+                    <Route
+                      path="/other-vouchers/edit/:voucherId"
+                      element={<CreateOtherVoucher mode="edit" />}
                     />
 
                     {/* Admin Routes - เฉพาะ admin และ dev เท่านั้น */}
