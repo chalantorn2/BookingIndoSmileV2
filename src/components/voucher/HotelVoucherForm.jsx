@@ -18,7 +18,8 @@ const HotelVoucherForm = ({ voucherData: initialVoucherData, onSave }) => {
     accommodation_night: "",
     accommodation_check_in: "",
     accommodation_check_out: "",
-    accommodation_price: "",
+    accommodation_confirmation_no: "",
+    accommodation_confirmation_code: "",
     payment_option: "",
     payment_amount: "",
     remark: "",
@@ -87,9 +88,11 @@ const HotelVoucherForm = ({ voucherData: initialVoucherData, onSave }) => {
         accommodation_night: voucherData.accommodation_night
           ? parseInt(voucherData.accommodation_night) || null
           : null,
-        accommodation_price: voucherData.accommodation_price
-          ? parseFloat(voucherData.accommodation_price) || null
-          : null,
+        accommodation_price: null,
+        accommodation_confirmation_no:
+          voucherData.accommodation_confirmation_no || null,
+        accommodation_confirmation_code:
+          voucherData.accommodation_confirmation_code || null,
         payment_amount: voucherData.payment_amount
           ? parseFloat(voucherData.payment_amount) || null
           : null,
@@ -276,12 +279,30 @@ const HotelVoucherForm = ({ voucherData: initialVoucherData, onSave }) => {
                 value={voucherData.accommodation_night}
                 onChange={handleInputChange}
               />
-              <ServiceItem
-                label="Price"
-                name="accommodation_price"
-                value={voucherData.accommodation_price}
-                onChange={handleInputChange}
-              />
+              <div className="flex items-start mb-3 font-Prompt">
+                <span className="min-w-[150px] inline-block text-left">
+                  Hotel Confirm No.:
+                </span>
+                <input
+                  type="text"
+                  name="accommodation_confirmation_no"
+                  value={voucherData.accommodation_confirmation_no || ""}
+                  onChange={handleInputChange}
+                  className="border-b border-gray-500 focus:outline-none flex-1 text-center font-Prompt"
+                />
+              </div>
+              <div className="flex items-start mb-3 font-Prompt">
+                <span className="min-w-[150px] inline-block text-left">
+                  Confirmation Code:
+                </span>
+                <input
+                  type="text"
+                  name="accommodation_confirmation_code"
+                  value={voucherData.accommodation_confirmation_code || ""}
+                  onChange={handleInputChange}
+                  className="border-b border-gray-500 focus:outline-none flex-1 text-center font-Prompt"
+                />
+              </div>
             </div>
           </div>
         </div>
